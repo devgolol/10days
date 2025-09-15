@@ -10,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.days.book.entity.Book;
 import com.days.book.repository.BookRepository;
 
+import jakarta.persistence.EntityNotFoundException;
+
 @Service
 @Transactional
 public class BookService {
@@ -30,6 +32,12 @@ public class BookService {
     //도서 조회 (ID로)
     public Optional<Book> findBookById(Long id) {
         return bookRepository.findById(id);
+    }
+
+    //도서 조회 (ID로) - LoanService용
+    public Book getBook(Long id) {
+        return bookRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("도서를 찾을 수 없습니다. ID: " + id));
     }
 
     //도서 조회(ISBN으로)
@@ -99,6 +107,11 @@ public class BookService {
                 }
                 return bookRepository.save(existingBook);
             }
+
+    //도서 정보 수정 (Book 객체로) - LoanService용
+    public Book updateBook(Book book) {
+        return bookRepository.save(book);
+    }
 
     public Book updateBookCopies (Long id, Integer newTotalCopies) {
         Book book = bookRepository.findById(id)
