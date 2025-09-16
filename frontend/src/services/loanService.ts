@@ -1,5 +1,49 @@
 import apiClient from './api';
-import { Loan, LoanCreateRequest, ApiResponse, PageResponse } from '../types';
+
+// 로컬 타입 정의
+interface Book {
+  id: number;
+  title: string;
+  author: string;
+  isbn: string;
+  totalCopies: number;
+  availableCopies: number;
+  category?: string;
+  publishedDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Member {
+  id: number;
+  memberNumber: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  status: 'ACTIVE' | 'SUSPENDED' | 'INACTIVE';
+  registrationDate: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Loan {
+  id: number;
+  book: Book;
+  member: Member;
+  loanDate: string;
+  dueDate: string;
+  returnDate?: string;
+  status: 'ACTIVE' | 'RETURNED' | 'OVERDUE' | 'LOST';
+  overdueFee: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface LoanCreateRequest {
+  bookId: number;
+  memberId: number;
+}
 
 export const loanService = {
   // 모든 대출 조회

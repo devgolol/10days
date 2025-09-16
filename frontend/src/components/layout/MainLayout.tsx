@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Layout, Menu, theme, Avatar, Dropdown, Space } from 'antd';
+import React, { useState, useContext } from 'react';
+import { Layout, Menu, theme, Avatar, Dropdown, Space, message } from 'antd';
 import {
   DashboardOutlined,
   BookOutlined,
@@ -11,17 +11,25 @@ import {
   SettingOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { AuthContext } from '../../App';
 
 const { Header, Sider, Content } = Layout;
 
-const MainLayout: React.FC = () => {
+const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const authContext = useContext(AuthContext);
   
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+
+  if (!authContext) {
+    return null; // AuthContext가 없으면 렌더링하지 않음
+  }
+
+  const { username, role, logout } = authContext;
 
   // 메뉴 아이템 정의
   const menuItems = [
@@ -77,8 +85,9 @@ const MainLayout: React.FC = () => {
   const handleUserMenuClick = ({ key }: { key: string }) => {
     switch (key) {
       case 'logout':
-        // 로그아웃 로직 (추후 구현)
-        console.log('로그아웃');
+        logout();
+        message.success('로그아웃되었습니다.');
+        navigate('/login');
         break;
       case 'profile':
         navigate('/profile');
@@ -143,7 +152,7 @@ const MainLayout: React.FC = () => {
             >
               <Space style={{ cursor: 'pointer' }}>
                 <Avatar size="small" icon={<UserOutlined />} />
-                <span>관리자</span>
+                <span>{username} ({role})</span>
               </Space>
             </Dropdown>
           </div>
@@ -158,7 +167,7 @@ const MainLayout: React.FC = () => {
             borderRadius: borderRadiusLG,
           }}
         >
-          <Outlet />
+          {children}
         </Content>
       </Layout>
     </Layout>

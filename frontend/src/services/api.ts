@@ -10,14 +10,13 @@ const apiClient = axios.create({
   },
 });
 
-// 요청 인터셉터 (추후 인증 토큰 추가용)
+// 요청 인터셉터 (JWT 토큰 자동 추가)
 apiClient.interceptors.request.use(
   (config) => {
-    // 추후 JWT 토큰 추가
-    // const token = localStorage.getItem('token');
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
@@ -25,15 +24,18 @@ apiClient.interceptors.request.use(
   }
 );
 
-// 응답 인터셉터 (에러 처리)
+// 응답 인터셉터 (에러 처리 및 자동 로그아웃)
 apiClient.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
     if (error.response?.status === 401) {
-      // 인증 실패시 로그인 페이지로 리다이렉트
-      // window.location.href = '/login';
+      // 인증 실패시 로그아웃 처리
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      localStorage.removeItem('role');
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }

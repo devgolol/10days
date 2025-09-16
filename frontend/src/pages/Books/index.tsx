@@ -4,6 +4,7 @@ import {
   Button,
   Space,
   Input,
+  InputNumber,
   Card,
   Tag,
   Typography,
@@ -21,9 +22,39 @@ import {
   SearchOutlined,
   BookOutlined,
 } from '@ant-design/icons';
-import { Book, BookCreateRequest } from '../../types';
-import { bookService } from '../../services';
-import { formatDate, getErrorMessage } from '../../utils';
+import { bookService } from '../../services/bookService';
+
+// 로컬 타입 정의
+interface Book {
+  id: number;
+  title: string;
+  author: string;
+  isbn: string;
+  totalCopies: number;
+  availableCopies: number;
+  category?: string;
+  publishedDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface BookCreateRequest {
+  title: string;
+  author: string;
+  isbn: string;
+  totalCopies: number;
+  category?: string;
+  publishedDate?: string;
+}
+
+// Utils 함수들 (임시)
+const formatDate = (date: string) => {
+  return new Date(date).toLocaleDateString('ko-KR');
+};
+
+const getErrorMessage = (error: any) => {
+  return error?.message || '오류가 발생했습니다.';
+};
 
 const { Title } = Typography;
 const { Search } = Input;
@@ -108,14 +139,15 @@ const BookList: React.FC = () => {
     try {
       setLoading(true);
       // 실제 API 호출
-      // const response = await bookService.getAll();
-      // setBooks(response.data.data);
+      const response = await bookService.getAll();
+      setBooks(response.data);
       
-      // Mock 데이터 사용
-      setTimeout(() => {
-        setBooks(mockBooks);
-        setLoading(false);
-      }, 500);
+      // Mock 데이터 사용 (비활성화)
+      // setTimeout(() => {
+      //   setBooks(mockBooks);
+      //   setLoading(false);
+      // }, 500);
+      setLoading(false);
     } catch (error) {
       message.error(getErrorMessage(error));
       setLoading(false);
@@ -411,7 +443,11 @@ const BookList: React.FC = () => {
                   { type: 'number', min: 1, message: '1 이상의 수를 입력해주세요' }
                 ]}
               >
-                <Input type="number" placeholder="총 권수" min={1} />
+                <InputNumber 
+                  placeholder="총 권수" 
+                  min={1} 
+                  style={{ width: '100%' }}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>

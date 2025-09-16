@@ -1,5 +1,6 @@
 // 백엔드 Entity 기반 TypeScript 타입 정의
 
+// 엔티티 타입들
 export interface Book {
   id: number;
   title: string;
@@ -37,22 +38,6 @@ export interface Loan {
   overdueFee: number;
   createdAt: string;
   updatedAt: string;
-}
-
-// API 응답 타입
-export interface ApiResponse<T> {
-  data: T;
-  message?: string;
-  status: number;
-}
-
-// 페이지네이션 타입
-export interface PageResponse<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
 }
 
 // 폼 데이터 타입 (생성용)
