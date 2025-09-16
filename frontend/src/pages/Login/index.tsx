@@ -228,12 +228,12 @@ const Login: React.FC = () => {
                   </Button>
                 </Form.Item>
 
-                {/* 아이디/비밀번호 찾기 링크 */}
+                {/* 아이디/비밀번호 찾기 및 회원가입 링크 */}
                 <div style={{ textAlign: 'center', marginTop: '16px' }}>
                   <Button 
                     type="link" 
                     size="small"
-                    onClick={() => setFindEmailModal(true)}
+                    onClick={() => navigate('/find-id')}
                     style={{ padding: '0 8px' }}
                   >
                     아이디 찾기
@@ -242,10 +242,19 @@ const Login: React.FC = () => {
                   <Button 
                     type="link" 
                     size="small"
-                    onClick={() => setResetPasswordModal(true)}
+                    onClick={() => navigate('/find-password')}
                     style={{ padding: '0 8px' }}
                   >
                     비밀번호 찾기
+                  </Button>
+                  <Divider type="vertical" />
+                  <Button 
+                    type="link" 
+                    size="small"
+                    onClick={() => navigate('/register')}
+                    style={{ padding: '0 8px' }}
+                  >
+                    회원가입
                   </Button>
                 </div>
               </Form>

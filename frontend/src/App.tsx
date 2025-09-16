@@ -5,6 +5,9 @@ import koKR from 'antd/locale/ko_KR';
 
 // 페이지 컴포넌트들
 import Login from './pages/Login';
+import Register from './pages/Register';
+import FindId from './pages/FindId';
+import FindPassword from './pages/FindPassword';
 import MainLayout from './components/layout/MainLayout';
 import Dashboard from './pages/Dashboard';
 import Books from './pages/Books';
@@ -98,6 +101,36 @@ const AppContent: React.FC = () => {
           element={
             <LoginRedirect>
               <Login />
+            </LoginRedirect>
+          } 
+        />
+        
+        {/* 회원가입 페이지 */}
+        <Route 
+          path="/register" 
+          element={
+            <LoginRedirect>
+              <Register />
+            </LoginRedirect>
+          } 
+        />
+        
+        {/* 아이디 찾기 페이지 */}
+        <Route 
+          path="/find-id" 
+          element={
+            <LoginRedirect>
+              <FindId />
+            </LoginRedirect>
+          } 
+        />
+        
+        {/* 비밀번호 찾기 페이지 */}
+        <Route 
+          path="/find-password" 
+          element={
+            <LoginRedirect>
+              <FindPassword />
             </LoginRedirect>
           } 
         />

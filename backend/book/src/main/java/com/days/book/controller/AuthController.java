@@ -63,25 +63,66 @@ public class AuthController {
     }
 
     /**
-     * 이메일 찾기 (사용자명으로)
+     * 아이디 찾기 - 인증코드 발송
      */
-    @PostMapping("/find-email")
-    public ResponseEntity<Map<String, String>> findEmail(@RequestBody FindEmailRequest request) {
+    @PostMapping("/find-id/send-code")
+    public ResponseEntity<Map<String, String>> sendFindIdCode(@RequestBody FindIdSendCodeRequest request) {
         try {
-            String message = authService.findEmailByUsername(request.getUsername());
+            String message = authService.sendFindIdCode(request.getEmail());
             return ResponseEntity.ok(Map.of("message", message));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * 아이디 찾기 - 인증코드 확인
+     */
+    @PostMapping("/find-id/verify-code")
+    public ResponseEntity<Map<String, String>> verifyFindIdCode(@RequestBody FindIdVerifyCodeRequest request) {
+        try {
+            Map<String, String> result = authService.verifyFindIdCode(request.getEmail(), request.getCode());
+            return ResponseEntity.ok(result);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
     /**
-     * 비밀번호 찾기 (이메일로 임시 비밀번호 발송)
+     * 비밀번호 찾기 - 인증코드 발송
      */
-    @PostMapping("/reset-password")
-    public ResponseEntity<Map<String, String>> resetPassword(@RequestBody ResetPasswordRequest request) {
+    @PostMapping("/reset-password/send-code")
+    public ResponseEntity<Map<String, String>> sendResetPasswordCode(@RequestBody ResetPasswordSendCodeRequest request) {
         try {
-            String message = authService.resetPassword(request.getEmail());
+            String message = authService.sendResetPasswordCode(request.getUsername(), request.getEmail());
+            return ResponseEntity.ok(Map.of("message", message));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * 비밀번호 찾기 - 인증코드 확인
+     */
+    @PostMapping("/reset-password/verify-code")  
+    public ResponseEntity<Map<String, String>> verifyResetPasswordCode(@RequestBody ResetPasswordVerifyCodeRequest request) {
+        try {
+            String message = authService.verifyResetPasswordCode(
+                request.getUsername(), request.getEmail(), request.getCode());
+            return ResponseEntity.ok(Map.of("message", message));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * 비밀번호 찾기 - 새 비밀번호 설정
+     */
+    @PostMapping("/reset-password/set-new")
+    public ResponseEntity<Map<String, String>> setNewPassword(@RequestBody SetNewPasswordRequest request) {
+        try {
+            String message = authService.resetPasswordWithCode(
+                request.getUsername(), request.getEmail(), request.getCode(), request.getNewPassword());
             return ResponseEntity.ok(Map.of("message", message));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -125,19 +166,59 @@ public class AuthController {
         public void setToken(String token) { this.token = token; }
     }
 
-    public static class FindEmailRequest {
-        private String username;
-
-        // Getters and Setters
-        public String getUsername() { return username; }
-        public void setUsername(String username) { this.username = username; }
-    }
-
-    public static class ResetPasswordRequest {
+    public static class FindIdSendCodeRequest {
         private String email;
 
-        // Getters and Setters
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
+    }
+    
+    public static class FindIdVerifyCodeRequest {
+        private String email;
+        private String code;
+
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+        public String getCode() { return code; }
+        public void setCode(String code) { this.code = code; }
+    }
+    
+    public static class ResetPasswordSendCodeRequest {
+        private String username;
+        private String email;
+
+        public String getUsername() { return username; }
+        public void setUsername(String username) { this.username = username; }
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+    }
+    
+    public static class ResetPasswordVerifyCodeRequest {
+        private String username;
+        private String email;
+        private String code;
+
+        public String getUsername() { return username; }
+        public void setUsername(String username) { this.username = username; }
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+        public String getCode() { return code; }
+        public void setCode(String code) { this.code = code; }
+    }
+    
+    public static class SetNewPasswordRequest {
+        private String username;
+        private String email;
+        private String code;
+        private String newPassword;
+
+        public String getUsername() { return username; }
+        public void setUsername(String username) { this.username = username; }
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+        public String getCode() { return code; }
+        public void setCode(String code) { this.code = code; }
+        public String getNewPassword() { return newPassword; }
+        public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
     }
 }

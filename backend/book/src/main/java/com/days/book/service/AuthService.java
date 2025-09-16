@@ -2,21 +2,30 @@ package com.days.book.service;
 
 import com.days.book.entity.Role;
 import com.days.book.entity.User;
+import com.days.book.entity.VerificationCode;
+import com.days.book.entity.VerificationCode.VerificationType;
 import com.days.book.repository.UserRepository;
+import com.days.book.repository.VerificationCodeRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
+@Transactional
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final VerificationCodeRepository verificationCodeRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final EmailService emailService;
@@ -53,24 +62,6 @@ public class AuthService {
         emailService.sendEmailVerification(email, verificationToken, username);
 
         return "회원가입이 완료되었습니다. 이메일을 확인하여 인증을 완료해주세요.";
-    }
-
-    /**
-     * 로그인
-     */
-    public String login(String username, String password) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(username, password)
-        );
-
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
-
-        if (!user.getEmailVerified()) {
-            throw new RuntimeException("이메일 인증이 완료되지 않았습니다.");
-        }
-
-        return jwtService.generateToken(user);
     }
 
     /**
@@ -118,40 +109,141 @@ public class AuthService {
     }
 
     /**
-     * 이메일 찾기 (사용자명으로)
+     * 아이디 찾기 - 인증코드 발송
      */
-    public String findEmailByUsername(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
-
-        // 보안을 위해 이메일의 일부만 마스킹하여 반환
-        String email = user.getEmail();
-        String maskedEmail = maskEmail(email);
-
-        // 실제 이메일로 전체 정보 발송
-        emailService.sendFoundEmail(email, username);
-
-        return "등록된 이메일 주소: " + maskedEmail + "\n전체 정보가 해당 이메일로 발송되었습니다.";
-    }
-
-    /**
-     * 비밀번호 찾기 (이메일로 임시 비밀번호 발송)
-     */
-    public String resetPassword(String email) {
+    public String sendFindIdCode(String email) {
+        // 이메일로 사용자 확인
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("해당 이메일로 등록된 사용자를 찾을 수 없습니다."));
 
-        // 임시 비밀번호 생성
-        String temporaryPassword = emailService.generateTemporaryPassword();
-
-        // 사용자 비밀번호 업데이트
-        user.setPassword(passwordEncoder.encode(temporaryPassword));
+        // 인증코드 생성
+        String code = emailService.generateVerificationCode();
+        
+        // 인증코드 저장 (5분 유효)
+        VerificationCode verificationCode = VerificationCode.builder()
+                .email(email)
+                .code(code)
+                .type(VerificationType.FIND_ID)
+                .expiresAt(LocalDateTime.now().plusMinutes(5))
+                .used(false)
+                .username(user.getUsername())
+                .build();
+        
+        verificationCodeRepository.save(verificationCode);
+        
+        // 이메일 발송
+        emailService.sendUsernameVerificationEmail(email, code);
+        
+        log.info("아이디 찾기 인증코드 발송: email={}, code={}", email, code);
+        return "인증코드가 이메일로 발송되었습니다.";
+    }
+    
+    /**
+     * 아이디 찾기 - 인증코드 확인
+     */
+    public Map<String, String> verifyFindIdCode(String email, String code) {
+        // 유효한 인증코드 찾기
+        VerificationCode verificationCode = verificationCodeRepository
+                .findValidCode(email, code, VerificationType.FIND_ID, LocalDateTime.now())
+                .orElseThrow(() -> new RuntimeException("잘못되었거나 만료된 인증코드입니다."));
+        
+        // 인증코드 사용 처리
+        verificationCode.setUsed(true);
+        verificationCodeRepository.save(verificationCode);
+        
+        Map<String, String> result = new HashMap<>();
+        result.put("username", verificationCode.getUsername());
+        result.put("message", "인증이 완료되었습니다.");
+        
+        // 아이디 정보를 이메일로도 발송
+        emailService.sendFoundUsernameEmail(email, verificationCode.getUsername());
+        
+        log.info("아이디 찾기 완료: email={}, username={}", email, verificationCode.getUsername());
+        return result;
+    }
+    
+    /**
+     * 비밀번호 찾기 - 인증코드 발송
+     */
+    public String sendResetPasswordCode(String username, String email) {
+        // 사용자명과 이메일로 사용자 확인
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 사용자명입니다."));
+        
+        if (!user.getEmail().equals(email)) {
+            throw new RuntimeException("사용자 정보가 일치하지 않습니다.");
+        }
+        
+        // 인증코드 생성
+        String code = emailService.generateVerificationCode();
+        
+        // 인증코드 저장 (5분 유효)
+        VerificationCode verificationCode = VerificationCode.builder()
+                .email(email)
+                .code(code)
+                .type(VerificationType.RESET_PASSWORD)
+                .expiresAt(LocalDateTime.now().plusMinutes(5))
+                .used(false)
+                .username(username)
+                .build();
+        
+        verificationCodeRepository.save(verificationCode);
+        
+        // 이메일 발송
+        emailService.sendPasswordResetVerificationEmail(email, code);
+        
+        log.info("비밀번호 재설정 인증코드 발송: username={}, email={}, code={}", username, email, code);
+        return "인증코드가 이메일로 발송되었습니다.";
+    }
+    
+    /**
+     * 비밀번호 찾기 - 인증코드 확인
+     */
+    public String verifyResetPasswordCode(String username, String email, String code) {
+        // 유효한 인증코드 찾기
+        VerificationCode verificationCode = verificationCodeRepository
+                .findValidCode(email, code, VerificationType.RESET_PASSWORD, LocalDateTime.now())
+                .orElseThrow(() -> new RuntimeException("잘못되었거나 만료된 인증코드입니다."));
+        
+        // 사용자명 확인
+        if (!verificationCode.getUsername().equals(username)) {
+            throw new RuntimeException("인증 정보가 일치하지 않습니다.");
+        }
+        
+        // 인증코드는 아직 사용 처리하지 않음 (새 비밀번호 설정 시 사용 처리)
+        
+        log.info("비밀번호 재설정 인증 완료: username={}, email={}", username, email);
+        return "인증이 완료되었습니다. 새 비밀번호를 입력해주세요.";
+    }
+    
+    /**
+     * 비밀번호 찾기 - 새 비밀번호 설정
+     */
+    public String resetPasswordWithCode(String username, String email, String code, String newPassword) {
+        // 유효한 인증코드 찾기
+        VerificationCode verificationCode = verificationCodeRepository
+                .findValidCode(email, code, VerificationType.RESET_PASSWORD, LocalDateTime.now())
+                .orElseThrow(() -> new RuntimeException("잘못되었거나 만료된 인증코드입니다."));
+        
+        // 사용자명 확인
+        if (!verificationCode.getUsername().equals(username)) {
+            throw new RuntimeException("인증 정보가 일치하지 않습니다.");
+        }
+        
+        // 사용자 정보 조회
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        
+        // 새 비밀번호 설정
+        user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-
-        // 임시 비밀번호 이메일 발송
-        emailService.sendTemporaryPassword(email, temporaryPassword, user.getUsername());
-
-        return "임시 비밀번호가 이메일로 발송되었습니다.";
+        
+        // 인증코드 사용 처리
+        verificationCode.setUsed(true);
+        verificationCodeRepository.save(verificationCode);
+        
+        log.info("비밀번호 재설정 완료: username={}", username);
+        return "비밀번호가 성공적으로 변경되었습니다.";
     }
 
     /**
