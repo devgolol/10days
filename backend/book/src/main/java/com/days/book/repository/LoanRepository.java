@@ -31,6 +31,9 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
     // 특정 상태의 모든 대출 조회
     List<Loan> findByStatus(LoanStatus status);
     
+    // 특정 상태의 대출 건수 조회
+    Long countByStatus(LoanStatus status);
+    
     // 반납 예정일이 지난 활성 대출 조회 (연체 대상)
     List<Loan> findByDueDateBeforeAndStatus(LocalDate date, LoanStatus status);
     

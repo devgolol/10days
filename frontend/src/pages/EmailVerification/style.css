@@ -1,0 +1,131 @@
+.email-verification-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+}
+
+.email-verification-card {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  border: none;
+}
+
+.email-verification-card.success-card {
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+  color: white;
+}
+
+.email-verification-card.success-card .ant-card-body {
+  background: transparent;
+}
+
+.verification-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.verification-icon {
+  font-size: 48px;
+  color: #1890ff;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.success-icon {
+  font-size: 48px;
+  color: #4caf50;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.success-card .success-icon {
+  color: white;
+}
+
+.verification-header h2 {
+  margin: 0 0 8px 0 !important;
+  color: #262626;
+}
+
+.success-card .verification-header h2 {
+  color: white !important;
+}
+
+.verification-content {
+  padding: 0 8px;
+}
+
+.code-input-section {
+  margin: 24px 0;
+}
+
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 12px;
+  z-index: 1;
+  color: #8c8c8c;
+  font-size: 16px;
+}
+
+.input-group .ant-input {
+  padding-left: 40px;
+}
+
+.resend-section {
+  text-align: center;
+  margin-top: 24px;
+}
+
+.back-section {
+  text-align: center;
+  margin-top: 16px;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 16px;
+}
+
+.verification-actions {
+  text-align: center;
+  margin-top: 24px;
+}
+
+.success-card .verification-actions .ant-btn-primary {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
+.success-card .verification-actions .ant-btn-primary:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* 모바일 반응형 */
+@media (max-width: 480px) {
+  .email-verification-container {
+    padding: 16px;
+  }
+  
+  .email-verification-card {
+    margin: 0;
+  }
+  
+  .verification-header {
+    margin-bottom: 24px;
+  }
+  
+  .verification-icon,
+  .success-icon {
+    font-size: 40px;
+  }
+}

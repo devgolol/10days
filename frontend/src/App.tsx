@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, theme } from 'antd';
 import koKR from 'antd/locale/ko_KR';
 
 // 페이지 컴포넌트들
 import Login from './pages/Login';
 import Register from './pages/Register';
+import EmailVerification from './pages/EmailVerification';
 import FindId from './pages/FindId';
 import FindPassword from './pages/FindPassword';
+import Settings from './pages/Settings';
 import MainLayout from './components/layout/MainLayout';
 import Dashboard from './pages/Dashboard';
 import Books from './pages/Books';
@@ -52,6 +54,9 @@ const AppContent: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return localStorage.getItem('darkMode') === 'true';
+  });
 
   useEffect(() => {
     // 앱 시작 시 토큰 확인
@@ -84,6 +89,12 @@ const AppContent: React.FC = () => {
     setRole(null);
   };
 
+  const toggleDarkMode = () => {
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    localStorage.setItem('darkMode', newMode.toString());
+  };
+
   const authValue: AuthContextType = {
     isAuthenticated,
     username,
@@ -94,76 +105,92 @@ const AppContent: React.FC = () => {
 
   return (
     <AuthContext.Provider value={authValue}>
-      <Routes>
-        {/* 로그인 페이지 */}
-        <Route 
-          path="/login" 
-          element={
-            <LoginRedirect>
-              <Login />
-            </LoginRedirect>
-          } 
-        />
-        
-        {/* 회원가입 페이지 */}
-        <Route 
-          path="/register" 
-          element={
-            <LoginRedirect>
-              <Register />
-            </LoginRedirect>
-          } 
-        />
-        
-        {/* 아이디 찾기 페이지 */}
-        <Route 
-          path="/find-id" 
-          element={
-            <LoginRedirect>
-              <FindId />
-            </LoginRedirect>
-          } 
-        />
-        
-        {/* 비밀번호 찾기 페이지 */}
-        <Route 
-          path="/find-password" 
-          element={
-            <LoginRedirect>
-              <FindPassword />
-            </LoginRedirect>
-          } 
-        />
-        
-        {/* 보호된 페이지들 */}
-        <Route 
-          path="/*" 
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <Routes>
-                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/books" element={<Books />} />
-                  <Route path="/members" element={<Members />} />
-                  <Route path="/loans" element={<Loans />} />
-                </Routes>
-              </MainLayout>
-            </ProtectedRoute>
-          } 
-        />
-      </Routes>
+      <ConfigProvider 
+        locale={koKR}
+        theme={{
+          algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
+        }}
+      >
+        <Routes>
+          {/* 로그인 페이지 */}
+          <Route 
+            path="/login" 
+            element={
+              <LoginRedirect>
+                <Login />
+              </LoginRedirect>
+            } 
+          />
+          
+          {/* 회원가입 페이지 */}
+          <Route 
+            path="/register" 
+            element={
+              <LoginRedirect>
+                <Register />
+              </LoginRedirect>
+            } 
+          />
+          
+          {/* 이메일 인증 페이지 */}
+          <Route 
+            path="/verify-email" 
+            element={
+              <LoginRedirect>
+                <EmailVerification />
+              </LoginRedirect>
+            } 
+          />
+          
+          {/* 아이디 찾기 페이지 */}
+          <Route 
+            path="/find-id" 
+            element={
+              <LoginRedirect>
+                <FindId />
+              </LoginRedirect>
+            } 
+          />
+          
+          {/* 비밀번호 찾기 페이지 */}
+          <Route 
+            path="/find-password" 
+            element={
+              <LoginRedirect>
+                <FindPassword />
+              </LoginRedirect>
+            } 
+          />
+          
+          {/* 보호된 페이지들 */}
+          <Route 
+            path="/*" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Routes>
+                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/books" element={<Books />} />
+                    <Route path="/members" element={<Members />} />
+                    <Route path="/loans" element={<Loans />} />
+                    <Route path="/settings" element={<Settings isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />} />
+                  </Routes>
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
+        </Routes>
+      </ConfigProvider>
     </AuthContext.Provider>
   );
 };
 
 const App: React.FC = () => {
   return (
-    <ConfigProvider locale={koKR}>
-      <Router>
-        <AppContent />
-      </Router>
-    </ConfigProvider>
+    <Router>
+      <AppContent />
+    </Router>
   );
 };
 

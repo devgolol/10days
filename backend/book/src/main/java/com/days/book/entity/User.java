@@ -70,6 +70,16 @@ public class User implements UserDetails {
     
     // UserDetails 구현
     @Override
+    public String getUsername() {
+        return username;
+    }
+    
+    @Override
+    public String getPassword() {
+        return password;
+    }
+    
+    @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }

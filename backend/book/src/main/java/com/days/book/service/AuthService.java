@@ -247,6 +247,31 @@ public class AuthService {
     }
 
     /**
+     * 회원탈퇴
+     */
+    public String withdrawUser(String username, String password) {
+        // 사용자 정보 조회
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        // 비밀번호 확인
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new RuntimeException("비밀번호가 일치하지 않습니다.");
+        }
+
+        // 관리자 계정은 탈퇴 불가
+        if ("admin".equals(username)) {
+            throw new RuntimeException("관리자 계정은 탈퇴할 수 없습니다.");
+        }
+
+        // 사용자 삭제
+        userRepository.delete(user);
+        
+        log.info("회원탈퇴 완료: username={}", username);
+        return "회원탈퇴가 완료되었습니다.";
+    }
+
+    /**
      * 이메일 마스킹 (보안을 위해)
      */
     private String maskEmail(String email) {

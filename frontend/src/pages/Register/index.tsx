@@ -187,7 +187,7 @@ const Register: React.FC = () => {
                   <Button
                     type="primary"
                     size="large"
-                    onClick={() => navigate('/login')}
+                    onClick={() => navigate(`/verify-email?email=${encodeURIComponent(userEmail)}`)}
                     style={{
                       width: '100%',
                       height: '48px',
@@ -199,11 +199,11 @@ const Register: React.FC = () => {
                       marginBottom: '12px'
                     }}
                   >
-                    로그인 페이지로 이동
+                    이메일 인증하기
                   </Button>
                   
                   <Text type="secondary" style={{ fontSize: '14px' }}>
-                    이메일 인증 후 로그인할 수 있습니다
+                    받은 인증코드를 입력해주세요
                   </Text>
                 </div>
               </Space>

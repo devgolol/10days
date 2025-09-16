@@ -1,19 +1,22 @@
 package com.days.book.controller;
 
 import com.days.book.service.AuthService;
+import com.days.book.service.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "http://localhost:5175"})
 public class AuthController {
 
     private final AuthService authService;
+    private final JwtService jwtService;
 
     /**
      * 회원가입
@@ -116,8 +119,30 @@ public class AuthController {
     }
     
     /**
-     * 비밀번호 찾기 - 새 비밀번호 설정
+     * 회원탈퇴
      */
+    @PostMapping("/withdraw")
+    public ResponseEntity<Map<String, String>> withdraw(@RequestBody WithdrawRequest request, 
+                                                       HttpServletRequest httpRequest) {
+        try {
+            // JWT 토큰에서 사용자명 추출
+            String token = extractTokenFromHeader(httpRequest);
+            String username = jwtService.extractUsername(token);
+            
+            String message = authService.withdrawUser(username, request.getPassword());
+            return ResponseEntity.ok(Map.of("message", message));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    private String extractTokenFromHeader(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        }
+        throw new RuntimeException("인증 토큰이 필요합니다.");
+    }
     @PostMapping("/reset-password/set-new")
     public ResponseEntity<Map<String, String>> setNewPassword(@RequestBody SetNewPasswordRequest request) {
         try {
@@ -220,5 +245,12 @@ public class AuthController {
         public void setCode(String code) { this.code = code; }
         public String getNewPassword() { return newPassword; }
         public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
+    }
+    
+    public static class WithdrawRequest {
+        private String password;
+
+        public String getPassword() { return password; }
+        public void setPassword(String password) { this.password = password; }
     }
 }

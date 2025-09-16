@@ -236,6 +236,19 @@ public class LoanService {
     }
 
     /**
+     * DashboardController용 메서드들
+     */
+    @Transactional(readOnly = true)
+    public long getActiveLoansCount() {
+        return loanRepository.countByStatus(LoanStatus.ACTIVE);
+    }
+
+    @Transactional(readOnly = true)
+    public long getOverdueLoansCount() {
+        return loanRepository.findOverdueLoans(LocalDate.now()).size();
+    }
+
+    /**
      * 대출 가능 여부 검증
      */
     private void validateLoanEligibility(Book book, Member member) {
