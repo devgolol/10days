@@ -9,8 +9,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-
-import java.util.Random;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -71,6 +71,31 @@ public class AuthService {
         }
 
         return jwtService.generateToken(user);
+    }
+
+    /**
+     * 로그인 (사용자 정보 포함)
+     */
+    public Map<String, String> loginWithUserInfo(String username, String password) {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(username, password)
+        );
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        if (!user.getEmailVerified()) {
+            throw new RuntimeException("이메일 인증이 완료되지 않았습니다.");
+        }
+
+        String token = jwtService.generateToken(user);
+        
+        Map<String, String> result = new HashMap<>();
+        result.put("token", token);
+        result.put("username", user.getUsername());
+        result.put("role", user.getRole().toString());
+        
+        return result;
     }
 
     /**

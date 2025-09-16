@@ -8,13 +8,17 @@ import {
   message, 
   Space,
   Row,
-  Col 
+  Col,
+  Modal,
+  Divider 
 } from 'antd';
 import { 
   UserOutlined, 
   LockOutlined, 
   LoginOutlined,
-  BookOutlined 
+  BookOutlined,
+  MailOutlined,
+  QuestionCircleOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
@@ -27,7 +31,14 @@ interface LoginRequest {
 
 const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
+  const [findEmailModal, setFindEmailModal] = useState(false);
+  const [resetPasswordModal, setResetPasswordModal] = useState(false);
+  const [findEmailLoading, setFindEmailLoading] = useState(false);
+  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
   const navigate = useNavigate();
+  
+  const [findEmailForm] = Form.useForm();
+  const [resetPasswordForm] = Form.useForm();
 
   const handleLogin = async (values: LoginRequest) => {
     setLoading(true);
@@ -61,6 +72,66 @@ const Login: React.FC = () => {
       message.error('네트워크 오류가 발생했습니다.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 아이디 찾기
+  const handleFindEmail = async (values: { username: string }) => {
+    setFindEmailLoading(true);
+    
+    try {
+      const response = await fetch('http://localhost:8080/api/auth/find-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        message.success(data.message);
+        setFindEmailModal(false);
+        findEmailForm.resetFields();
+      } else {
+        message.error(data.error || '아이디 찾기에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('Find email error:', error);
+      message.error('네트워크 오류가 발생했습니다.');
+    } finally {
+      setFindEmailLoading(false);
+    }
+  };
+
+  // 비밀번호 찾기
+  const handleResetPassword = async (values: { email: string }) => {
+    setResetPasswordLoading(true);
+    
+    try {
+      const response = await fetch('http://localhost:8080/api/auth/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        message.success(data.message);
+        setResetPasswordModal(false);
+        resetPasswordForm.resetFields();
+      } else {
+        message.error(data.error || '비밀번호 초기화에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('Reset password error:', error);
+      message.error('네트워크 오류가 발생했습니다.');
+    } finally {
+      setResetPasswordLoading(false);
     }
   };
 
@@ -150,6 +221,27 @@ const Login: React.FC = () => {
                     {loading ? '로그인 중...' : '로그인'}
                   </Button>
                 </Form.Item>
+
+                {/* 아이디/비밀번호 찾기 링크 */}
+                <div style={{ textAlign: 'center', marginTop: '16px' }}>
+                  <Button 
+                    type="link" 
+                    size="small"
+                    onClick={() => setFindEmailModal(true)}
+                    style={{ padding: '0 8px' }}
+                  >
+                    아이디 찾기
+                  </Button>
+                  <Divider type="vertical" />
+                  <Button 
+                    type="link" 
+                    size="small"
+                    onClick={() => setResetPasswordModal(true)}
+                    style={{ padding: '0 8px' }}
+                  >
+                    비밀번호 찾기
+                  </Button>
+                </div>
               </Form>
 
               {/* 테스트 계정 안내 */}
@@ -169,6 +261,94 @@ const Login: React.FC = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* 아이디 찾기 모달 */}
+      <Modal
+        title="아이디 찾기"
+        open={findEmailModal}
+        onCancel={() => {
+          setFindEmailModal(false);
+          findEmailForm.resetFields();
+        }}
+        footer={null}
+        centered
+      >
+        <Form
+          form={findEmailForm}
+          onFinish={handleFindEmail}
+          layout="vertical"
+        >
+          <Form.Item
+            name="username"
+            label="사용자명"
+            rules={[
+              { required: true, message: '사용자명을 입력해주세요!' },
+              { min: 3, message: '사용자명은 최소 3자 이상이어야 합니다.' }
+            ]}
+          >
+            <Input
+              prefix={<UserOutlined />}
+              placeholder="등록한 사용자명을 입력하세요"
+            />
+          </Form.Item>
+          
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={findEmailLoading}
+              style={{ width: '100%' }}
+              icon={<MailOutlined />}
+            >
+              {findEmailLoading ? '찾는 중...' : '아이디 찾기'}
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* 비밀번호 찾기 모달 */}
+      <Modal
+        title="비밀번호 찾기"
+        open={resetPasswordModal}
+        onCancel={() => {
+          setResetPasswordModal(false);
+          resetPasswordForm.resetFields();
+        }}
+        footer={null}
+        centered
+      >
+        <Form
+          form={resetPasswordForm}
+          onFinish={handleResetPassword}
+          layout="vertical"
+        >
+          <Form.Item
+            name="email"
+            label="이메일"
+            rules={[
+              { required: true, message: '이메일을 입력해주세요!' },
+              { type: 'email', message: '올바른 이메일 형식이 아닙니다!' }
+            ]}
+          >
+            <Input
+              prefix={<MailOutlined />}
+              placeholder="등록한 이메일을 입력하세요"
+            />
+          </Form.Item>
+          
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={resetPasswordLoading}
+              style={{ width: '100%' }}
+              icon={<QuestionCircleOutlined />}
+            >
+              {resetPasswordLoading ? '발송 중...' : '임시 비밀번호 발송'}
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
