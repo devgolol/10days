@@ -89,15 +89,10 @@ const Dashboard: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // 실제 API 호출 (현재는 mock 데이터 사용)
-      // const response = await dashboardService.getStats();
-      // setData(response.data.data);
-      
-      // Mock 데이터 사용
-      setTimeout(() => {
-        setData(mockData);
-        setLoading(false);
-      }, 1000);
+      // 실제 API 호출
+      const response = await dashboardService.getStats();
+      setData(response.data.data);
+      setLoading(false);
       
     } catch (err) {
       setError(getErrorMessage(err));

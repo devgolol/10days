@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { 
   Form, 
   Input, 
@@ -21,6 +21,7 @@ import {
   QuestionCircleOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../../App';
 
 const { Title, Text } = Typography;
 
@@ -36,9 +37,16 @@ const Login: React.FC = () => {
   const [findEmailLoading, setFindEmailLoading] = useState(false);
   const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
   const navigate = useNavigate();
+  const authContext = useContext(AuthContext);
   
   const [findEmailForm] = Form.useForm();
   const [resetPasswordForm] = Form.useForm();
+
+  if (!authContext) {
+    return null; // AuthContext가 없으면 렌더링하지 않음
+  }
+
+  const { login } = authContext;
 
   const handleLogin = async (values: LoginRequest) => {
     setLoading(true);
@@ -55,10 +63,8 @@ const Login: React.FC = () => {
       const data = await response.json();
       
       if (response.ok) {
-        // JWT 토큰을 localStorage에 저장
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('username', data.username);
-        localStorage.setItem('role', data.role);
+        // AuthContext의 login 함수를 사용하여 상태 업데이트
+        login(data.token, data.username, data.role);
         
         message.success('로그인에 성공했습니다!');
         

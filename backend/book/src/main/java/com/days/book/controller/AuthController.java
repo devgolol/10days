@@ -33,10 +33,18 @@ public class AuthController {
      */
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequest request) {
+        System.out.println("=== Login attempt ===");
+        System.out.println("Username: " + request.getUsername());
+        System.out.println("Password length: " + (request.getPassword() != null ? request.getPassword().length() : "null"));
+        
         try {
             Map<String, String> loginResult = authService.loginWithUserInfo(request.getUsername(), request.getPassword());
+            System.out.println("Login successful for user: " + request.getUsername());
             return ResponseEntity.ok(loginResult);
         } catch (RuntimeException e) {
+            System.out.println("Login failed for user: " + request.getUsername());
+            System.out.println("Error: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }

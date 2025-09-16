@@ -230,6 +230,14 @@ public class MemberService {
     }
 
     /**
+     * DashboardController용 메서드
+     */
+    @Transactional(readOnly = true)
+    public long getTotalMembersCount() {
+        return memberRepository.count();
+    }
+
+    /**
      * 회원 통계 - 활성 회원 수
      */
     @Transactional(readOnly = true)

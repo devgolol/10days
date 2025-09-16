@@ -84,7 +84,8 @@ public class AuthService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
-        if (!user.getEmailVerified()) {
+        // admin 계정은 이메일 인증 우회 (테스트 및 관리자 계정)
+        if (!user.getEmailVerified() && !username.equals("admin")) {
             throw new RuntimeException("이메일 인증이 완료되지 않았습니다.");
         }
 

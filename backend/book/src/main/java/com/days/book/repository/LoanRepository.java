@@ -65,4 +65,8 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
     // 특정 회원의 활성 대출 조회
     @Query("SELECT l FROM Loan l WHERE l.member = :member AND l.status = 'ACTIVE'")
     List<Loan> findActiveLoansByMember(@Param("member") Member member);
+    
+    // 최근 대출 조회 (대출일 기준 최신순)
+    @Query("SELECT l FROM Loan l ORDER BY l.loanDate DESC LIMIT :limit")
+    List<Loan> findRecentLoans(@Param("limit") int limit);
 }

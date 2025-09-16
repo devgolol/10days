@@ -158,4 +158,9 @@ public class BookService {
     public long countAllBooks() {
         return bookRepository.count();
     }
+
+    // DashboardController용 메서드
+    public long getTotalBooksCount() {
+        return bookRepository.count();
+    }
 }
