@@ -1,0 +1,259 @@
+/* 전역 스타일 */
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* 메뉴 토글 버튼 */
+.trigger {
+  padding: 0 24px;
+  font-size: 18px;
+  line-height: 64px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.trigger:hover {
+  color: #1890ff;
+}
+
+/* 로딩 스피너 중앙 정렬 */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+/* 카드 호버 효과 */
+.ant-card {
+  transition: box-shadow 0.3s ease;
+}
+
+.ant-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* 테이블 행 호버 효과 */
+.ant-table-tbody > tr:hover > td {
+  background: #f5f5f5 !important;
+}
+
+/* 통계 카드 아이콘 색상 */
+.ant-statistic-content-prefix {
+  color: #1890ff;
+}
+
+/* 빈 상태 메시지 */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+}
+
+/* 검색 바 */
+.search-bar {
+  margin-bottom: 16px;
+}
+
+/* 액션 버튼 그룹 */
+.action-buttons {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* 필터 태그 */
+.filter-tags {
+  margin-bottom: 16px;
+}
+
+/* 상태 태그 */
+.status-tag {
+  font-weight: 500;
+}
+
+/* 반응형 테이블 */
+@media (max-width: 768px) {
+  .ant-table {
+    font-size: 12px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+/* 폼 스타일 */
+.form-container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* 에러 메시지 */
+.error-message {
+  color: #ff4d4f;
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+/* 성공 메시지 */
+.success-message {
+  color: #52c41a;
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+/* 대시보드 특별 스타일 */
+.dashboard-stat-card {
+  text-align: center;
+}
+
+.dashboard-alert {
+  border-radius: 8px;
+}
+
+/* 테이블 액션 버튼 */
+.table-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.table-actions .ant-btn {
+  padding: 4px 8px;
+  height: auto;
+  font-size: 12px;
+}
+
+/* 페이지 헤더 */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  margin: 0;
+}
+
+/* 사이드바 로고 */
+.logo {
+  height: 32px;
+  margin: 16px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* 사용자 드롭다운 */
+.user-dropdown {
+  cursor: pointer;
+}
+
+/* 모달 스타일 */
+.ant-modal-content {
+  border-radius: 8px;
+}
+
+/* 드로어 스타일 */
+.ant-drawer-content {
+  border-radius: 8px 0 0 8px;
+}
+
+/* 알림 스타일 */
+.ant-notification {
+  border-radius: 8px;
+}
+
+/* 스크롤바 스타일 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* 선택 비활성화 */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* 텍스트 말줄임 */
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 포커스 스타일 */
+.ant-input:focus,
+.ant-input-focused {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+/* 애니메이션 */
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 그리드 레이아웃 */
+.grid-container {
+  display: grid;
+  gap: 16px;
+}
+
+.grid-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 768px) {
+  .grid-2,
+  .grid-3,
+  .grid-4 {
+    grid-template-columns: 1fr;
+  }
+}
