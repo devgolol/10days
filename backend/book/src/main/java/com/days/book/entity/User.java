@@ -9,6 +9,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -33,6 +34,32 @@ public class User implements UserDetails {
     
     @Column(unique = true, nullable = false)
     private String email;
+    
+    // 도서관 회원 정보 추가
+    @Column(nullable = false, length = 50)
+    private String name;
+    
+    @Column(length = 15)
+    private String phone;
+    
+    @Column(length = 200)
+    private String address;
+    
+    @Column(name = "member_number", unique = true, length = 20)
+    private String memberNumber;
+    
+    @Column(name = "join_date")
+    @Builder.Default
+    private LocalDate joinDate = LocalDate.now();
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "member_status", length = 20)
+    @Builder.Default
+    private MemberStatus memberStatus = MemberStatus.ACTIVE;
+    
+    @Column(name = "max_loan_count", nullable = false)
+    @Builder.Default
+    private Integer maxLoanCount = 5;
     
     @Column(name = "email_verified", nullable = false)
     @Builder.Default
@@ -102,5 +129,45 @@ public class User implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
+    }
+    
+    // MemberStatus enum
+    public enum MemberStatus {
+        ACTIVE("활성"),
+        SUSPENDED("정지"),
+        WITHDRAWN("탈퇴");
+
+        private final String description;
+
+        MemberStatus(String description) {
+            this.description = description;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+    }
+    
+    // 도서관 회원 관련 메서드들
+    public boolean canLoan() {
+        return memberStatus == MemberStatus.ACTIVE;
+    }
+
+    public void suspend() {
+        this.memberStatus = MemberStatus.SUSPENDED;
+    }
+
+    public void activate() {
+        this.memberStatus = MemberStatus.ACTIVE;
+    }
+
+    public void withdraw() {
+        this.memberStatus = MemberStatus.WITHDRAWN;
+    }
+
+    public static String generateMemberNumber() {
+        String date = LocalDate.now().toString().replace("-", "");
+        long timestamp = System.currentTimeMillis() % 1000;
+        return "M" + date + String.format("%03d", timestamp);
     }
 }

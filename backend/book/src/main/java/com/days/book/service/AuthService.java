@@ -35,7 +35,7 @@ public class AuthService {
     /**
      * 회원가입
      */
-    public String register(String username, String password, String email) {
+    public String register(String username, String password, String email, String name, String phone, String address) {
         // 중복 확인 - 미인증 계정은 덮어쓰기 허용
         Optional<User> existingUser = userRepository.findByUsername(username);
         if (existingUser.isPresent() && existingUser.get().getEmailVerified()) {
@@ -57,6 +57,9 @@ public class AuthService {
             user = existingUser.get();
             user.setPassword(passwordEncoder.encode(password));
             user.setEmail(email);
+            user.setName(name);
+            user.setPhone(phone);
+            user.setAddress(address);
             user.setEmailVerificationToken(verificationToken);
             user.setUpdatedAt(java.time.LocalDateTime.now());
         } else if (existingEmailUser.isPresent() && !existingEmailUser.get().getEmailVerified()) {
@@ -64,6 +67,9 @@ public class AuthService {
             user = existingEmailUser.get();
             user.setUsername(username);
             user.setPassword(passwordEncoder.encode(password));
+            user.setName(name);
+            user.setPhone(phone);
+            user.setAddress(address);
             user.setEmailVerificationToken(verificationToken);
             user.setUpdatedAt(java.time.LocalDateTime.now());
         } else {
@@ -72,6 +78,10 @@ public class AuthService {
                     .username(username)
                     .password(passwordEncoder.encode(password))
                     .email(email)
+                    .name(name)
+                    .phone(phone)
+                    .address(address)
+                    .memberNumber(User.generateMemberNumber())
                     .role(Role.USER)
                     .emailVerified(false)
                     .emailVerificationToken(verificationToken)

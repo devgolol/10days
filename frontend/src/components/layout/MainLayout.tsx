@@ -31,52 +31,77 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const { username, role, logout } = authContext;
 
-  // 메뉴 아이템 정의
-  const menuItems = [
+  // 메뉴 아이템 정의 - 역할별 권한 제어
+  const allMenuItems = [
     {
       key: '/',
       icon: <DashboardOutlined />,
       label: '대시보드',
+      roles: ['ADMIN', 'USER'], // 모든 사용자 접근 가능
     },
     {
       key: '/books',
       icon: <BookOutlined />,
       label: '도서 관리',
+      roles: ['ADMIN'], // 관리자만 접근 가능
     },
     {
       key: '/members',
       icon: <UserOutlined />,
       label: '회원 관리',
+      roles: ['ADMIN'], // 관리자만 접근 가능
     },
     {
       key: '/loans',
       icon: <FileTextOutlined />,
       label: '대출 관리',
+      roles: ['ADMIN'], // 관리자만 접근 가능
     },
   ];
 
-  // 사용자 드롭다운 메뉴
-  const userMenuItems = [
-    {
-      key: 'profile',
-      icon: <UserOutlined />,
-      label: '내 정보',
-    },
-    {
-      key: 'settings',
-      icon: <SettingOutlined />,
-      label: '설정',
-    },
-    {
-      type: 'divider' as const,
-    },
-    {
-      key: 'logout',
-      icon: <LogoutOutlined />,
-      label: '로그아웃',
-      danger: true,
-    },
-  ];
+  // 현재 사용자 역할에 따른 메뉴 필터링
+  const menuItems = allMenuItems.filter(item => item.roles.includes(role));
+
+  // 사용자 드롭다운 메뉴 - 역할별 메뉴 구성
+  const getUserMenuItems = () => {
+    const baseItems = [
+      {
+        key: 'profile',
+        icon: <UserOutlined />,
+        label: '내 정보',
+      },
+      {
+        key: 'settings',
+        icon: <SettingOutlined />,
+        label: '설정',
+      },
+    ];
+
+    // USER 역할인 경우 회원탈퇴 메뉴 추가
+    if (role === 'USER') {
+      baseItems.push({
+        key: 'withdraw',
+        icon: <UserOutlined />,
+        label: '회원탈퇴',
+      });
+    }
+
+    baseItems.push(
+      {
+        type: 'divider' as const,
+      },
+      {
+        key: 'logout',
+        icon: <LogoutOutlined />,
+        label: '로그아웃',
+        danger: true,
+      }
+    );
+
+    return baseItems;
+  };
+
+  const userMenuItems = getUserMenuItems();
 
   const handleMenuClick = ({ key }: { key: string }) => {
     navigate(key);
@@ -94,6 +119,11 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         break;
       case 'settings':
         navigate('/settings');
+        break;
+      case 'withdraw':
+        // 회원탈퇴 확인 모달 표시
+        // TODO: 회원탈퇴 기능 구현
+        message.info('회원탈퇴 기능은 추후 구현 예정입니다.');
         break;
     }
   };

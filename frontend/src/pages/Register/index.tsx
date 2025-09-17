@@ -19,7 +19,10 @@ import {
   BookOutlined,
   UserAddOutlined,
   SafetyOutlined,
-  CheckCircleOutlined
+  CheckCircleOutlined,
+  PhoneOutlined,
+  HomeOutlined,
+  IdcardOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
@@ -30,6 +33,9 @@ interface RegisterRequest {
   email: string;
   password: string;
   confirmPassword: string;
+  name: string;
+  phone: string;
+  address: string;
 }
 
 interface PasswordStrength {
@@ -272,6 +278,21 @@ const Register: React.FC = () => {
                 </Form.Item>
 
                 <Form.Item
+                  name="name"
+                  rules={[
+                    { required: true, message: '이름을 입력해주세요!' },
+                    { min: 2, message: '이름은 최소 2자 이상이어야 합니다.' },
+                    { max: 50, message: '이름은 최대 50자까지 가능합니다.' }
+                  ]}
+                >
+                  <Input
+                    prefix={<IdcardOutlined />}
+                    placeholder="실명 (한글/영문)"
+                    style={{ borderRadius: '8px' }}
+                  />
+                </Form.Item>
+
+                <Form.Item
                   name="email"
                   rules={[
                     { required: true, message: '이메일을 입력해주세요!' },
@@ -281,6 +302,34 @@ const Register: React.FC = () => {
                   <Input
                     prefix={<MailOutlined />}
                     placeholder="이메일 주소"
+                    style={{ borderRadius: '8px' }}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  name="phone"
+                  rules={[
+                    { required: true, message: '전화번호를 입력해주세요!' },
+                    { pattern: /^[0-9-+\s()]+$/, message: '올바른 전화번호 형식이 아닙니다!' }
+                  ]}
+                >
+                  <Input
+                    prefix={<PhoneOutlined />}
+                    placeholder="전화번호 (예: 010-1234-5678)"
+                    style={{ borderRadius: '8px' }}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  name="address"
+                  rules={[
+                    { required: true, message: '주소를 입력해주세요!' },
+                    { max: 200, message: '주소는 최대 200자까지 가능합니다.' }
+                  ]}
+                >
+                  <Input
+                    prefix={<HomeOutlined />}
+                    placeholder="주소"
                     style={{ borderRadius: '8px' }}
                   />
                 </Form.Item>
