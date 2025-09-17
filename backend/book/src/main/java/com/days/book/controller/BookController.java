@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,15 +28,17 @@ public class BookController {
 
     private final BookService bookService;
 
-    //전체 도서 조회
+    //전체 도서 조회 (모든 인증된 사용자)
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<List<Book>> getAllBooks() {
         List<Book> books = bookService.findAllBooks();
         return ResponseEntity.ok(books);
     }
 
-    //특정 도서 조회
+    //특정 도서 조회 (모든 인증된 사용자)
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<Book> getBook(@PathVariable Long id) {
         try{
             Book book = bookService.getBook(id);
@@ -45,8 +48,9 @@ public class BookController {
         }
     }
 
-    //도서 등록
+    //도서 등록 (관리자만)
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Book> createBook(@Valid @RequestBody Book book) {
         try {
             Book savedBook = bookService.saveBook(book);
@@ -55,8 +59,10 @@ public class BookController {
             return ResponseEntity.badRequest().build();
         }
     }
-    //도서 정보 수정
+    
+    //도서 정보 수정 (관리자만)
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Book> updateBook(@PathVariable Long id, @Valid @RequestBody Book book) {
         try {
             Book updateBook = bookService.updateBook(id,book);
@@ -66,8 +72,9 @@ public class BookController {
         }
     }
 
-    //도서 삭제
+    //도서 삭제 (관리자만)
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteBook(@PathVariable Long id) {
         try {
             bookService.deleteBook(id);
@@ -79,8 +86,9 @@ public class BookController {
         }
     }
 
-    //키워드로 도서 검색
+    //키워드로 도서 검색 (모든 인증된 사용자)
     @GetMapping("/search")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<List<Book>> searchBooks (@RequestParam String keyword) {
         List<Book> books = bookService.searchBooksByKeyword(keyword);
         return ResponseEntity.ok(books);

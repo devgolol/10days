@@ -3,6 +3,7 @@ package com.days.book.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import com.days.book.service.BookService;
 import com.days.book.service.MemberService;
@@ -23,6 +24,7 @@ public class DashboardController {
     private final LoanService loanService;
     
     @GetMapping("/stats")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getDashboardStats() {
         try {
             // 각 서비스에서 통계 데이터 수집

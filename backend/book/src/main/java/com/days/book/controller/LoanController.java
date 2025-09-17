@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,9 +29,10 @@ public class LoanController {
     private final LoanService loanService;
 
     /**
-     * 도서 대출
+     * 도서 대출 (관리자만)
      */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Loan> createLoan(@RequestParam Long bookId, @RequestParam Long memberId) {
         try {
             Loan loan = loanService.createLoan(bookId, memberId);
@@ -41,9 +43,10 @@ public class LoanController {
     }
 
     /**
-     * 도서 반납
+     * 도서 반납 (관리자만)
      */
     @PutMapping("/{loanId}/return")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Loan> returnBook(@PathVariable Long loanId) {
         try {
             Loan loan = loanService.returnBook(loanId);
@@ -56,9 +59,10 @@ public class LoanController {
     }
 
     /**
-     * 대출 연장
+     * 대출 연장 (관리자만)
      */
     @PutMapping("/{loanId}/extend")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Loan> extendLoan(@PathVariable Long loanId) {
         try {
             Loan loan = loanService.extendLoan(loanId);

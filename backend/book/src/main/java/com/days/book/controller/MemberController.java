@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,9 +32,10 @@ public class MemberController {
     private final MemberService memberService;
 
     /**
-     * 회원 등록
+     * 회원 등록 (관리자만)
      */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Member> createMember(@Valid @RequestBody Member member) {
         try {
             Member savedMember = memberService.createMember(member);
@@ -44,18 +46,20 @@ public class MemberController {
     }
 
     /**
-     * 전체 회원 조회
+     * 전체 회원 조회 (관리자만)
      */
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<Member>> getAllMembers() {
         List<Member> members = memberService.getAllMembers();
         return ResponseEntity.ok(members);
     }
 
     /**
-     * ID로 회원 조회
+     * ID로 회원 조회 (관리자만)
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Member> getMember(@PathVariable Long id) {
         try {
             Member member = memberService.getMember(id);
@@ -66,9 +70,10 @@ public class MemberController {
     }
 
     /**
-     * 회원번호로 회원 조회
+     * 회원번호로 회원 조회 (관리자만)
      */
     @GetMapping("/member-number/{memberNumber}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Member> getMemberByMemberNumber(@PathVariable String memberNumber) {
         try {
             Member member = memberService.getMemberByMemberNumber(memberNumber);

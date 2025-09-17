@@ -20,6 +20,7 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         createDefaultAdminUser();
+        createDefaultTestUser();
     }
     
     private void createDefaultAdminUser() {
@@ -36,6 +37,23 @@ public class DataInitializer implements CommandLineRunner {
             log.info("Default admin user created: username=admin, password=admin123");
         } else {
             log.info("Admin user already exists");
+        }
+    }
+
+    private void createDefaultTestUser() {
+        if (!userRepository.existsByUsername("user")) {
+            User user = User.builder()
+                    .username("user")
+                    .email("user@library.com")
+                    .password(passwordEncoder.encode("user123"))
+                    .role(Role.USER)
+                    .emailVerified(true)  // 테스트 계정도 이메일 인증 완료 상태로 생성
+                    .build();
+            
+            userRepository.save(user);
+            log.info("Default test user created: username=user, password=user123");
+        } else {
+            log.info("Test user already exists");
         }
     }
 }
