@@ -22,6 +22,8 @@ import {
   SearchOutlined,
   UserOutlined,
 } from '@ant-design/icons';
+import { memberService } from '../../services';
+import { formatDate, getErrorMessage } from '../../utils';
 
 // 타입 정의 (임시)
 interface Member {
@@ -44,15 +46,6 @@ interface MemberCreateRequest {
   address: string;
 }
 
-// Utils 함수들 (임시)
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('ko-KR');
-};
-
-const getErrorMessage = (error: any) => {
-  return error?.message || '오류가 발생했습니다.';
-};
-
 const { Title } = Typography;
 const { Search } = Input;
 const { Option } = Select;
@@ -65,70 +58,6 @@ const MemberList: React.FC = () => {
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [form] = Form.useForm();
 
-  // Mock 데이터
-  const mockMembers: Member[] = [
-    {
-      id: 1,
-      memberNumber: 'M2025001',
-      name: '김철수',
-      email: 'kim.cs@email.com',
-      phone: '010-1234-5678',
-      address: '서울시 강남구 역삼동 123-45',
-      status: 'ACTIVE',
-      registrationDate: '2025-01-15',
-      createdAt: '2025-01-15T09:00:00',
-      updatedAt: '2025-01-15T09:00:00',
-    },
-    {
-      id: 2,
-      memberNumber: 'M2025002',
-      name: '이영희',
-      email: 'lee.yh@email.com',
-      phone: '010-2345-6789',
-      address: '서울시 서초구 서초동 456-78',
-      status: 'ACTIVE',
-      registrationDate: '2025-01-20',
-      createdAt: '2025-01-20T10:30:00',
-      updatedAt: '2025-01-20T10:30:00',
-    },
-    {
-      id: 3,
-      memberNumber: 'M2025003',
-      name: '박민수',
-      email: 'park.ms@email.com',
-      phone: '010-3456-7890',
-      address: '서울시 종로구 종로1가 789-12',
-      status: 'SUSPENDED',
-      registrationDate: '2025-02-01',
-      createdAt: '2025-02-01T14:15:00',
-      updatedAt: '2025-02-10T16:20:00',
-    },
-    {
-      id: 4,
-      memberNumber: 'M2025004',
-      name: '정수현',
-      email: 'jung.sh@email.com',
-      phone: '010-4567-8901',
-      address: '서울시 마포구 홍대동 234-56',
-      status: 'ACTIVE',
-      registrationDate: '2025-02-05',
-      createdAt: '2025-02-05T11:45:00',
-      updatedAt: '2025-02-05T11:45:00',
-    },
-    {
-      id: 5,
-      memberNumber: 'M2025005',
-      name: '황동현',
-      email: 'hwang.dh@email.com',
-      phone: '010-5678-9012',
-      address: '서울시 용산구 이태원동 567-89',
-      status: 'INACTIVE',
-      registrationDate: '2024-12-10',
-      createdAt: '2024-12-10T08:20:00',
-      updatedAt: '2025-01-30T15:10:00',
-    },
-  ];
-
   useEffect(() => {
     loadMembers();
   }, []);
@@ -137,14 +66,9 @@ const MemberList: React.FC = () => {
     try {
       setLoading(true);
       // 실제 API 호출
-      // const response = await memberService.getAll();
-      // setMembers(response.data.data);
-      
-      // Mock 데이터 사용
-      setTimeout(() => {
-        setMembers(mockMembers);
-        setLoading(false);
-      }, 500);
+      const response = await memberService.getAll();
+      setMembers(response.data);
+      setLoading(false);
     } catch (error) {
       message.error(getErrorMessage(error));
       setLoading(false);
@@ -161,17 +85,8 @@ const MemberList: React.FC = () => {
     try {
       setLoading(true);
       // 실제 API 호출
-      // const response = await memberService.search(value);
-      // setMembers(response.data.data);
-      
-      // Mock 검색
-      const filtered = mockMembers.filter(member =>
-        member.name.toLowerCase().includes(value.toLowerCase()) ||
-        member.email.toLowerCase().includes(value.toLowerCase()) ||
-        member.phone.includes(value) ||
-        member.memberNumber.includes(value)
-      );
-      setMembers(filtered);
+      const response = await memberService.search(value);
+      setMembers(response.data);
       setLoading(false);
     } catch (error) {
       message.error(getErrorMessage(error));
@@ -200,23 +115,12 @@ const MemberList: React.FC = () => {
   const handleDelete = async (id: number) => {
     try {
       // 실제 API 호출
-      // await memberService.delete(id);
-      
-      // Mock 삭제
+      await memberService.delete(id);
       setMembers(members.filter(member => member.id !== id));
       message.success('회원이 삭제되었습니다.');
     } catch (error) {
       message.error(getErrorMessage(error));
     }
-  };
-
-  const generateMemberNumber = () => {
-    const year = new Date().getFullYear();
-    const lastMember = members.reduce((max, member) => {
-      const num = parseInt(member.memberNumber.slice(-3));
-      return num > max ? num : max;
-    }, 0);
-    return `M${year}${(lastMember + 1).toString().padStart(3, '0')}`;
   };
 
   const handleModalOk = async () => {
@@ -225,30 +129,17 @@ const MemberList: React.FC = () => {
       
       if (editingMember) {
         // 수정
-        // const response = await memberService.update(editingMember.id, values);
-        
-        // Mock 수정
+        const response = await memberService.update(editingMember.id, values);
+        const updatedMember = response.data;
         const updatedMembers = members.map(member =>
-          member.id === editingMember.id
-            ? { ...member, ...values, updatedAt: new Date().toISOString() }
-            : member
+          member.id === editingMember.id ? updatedMember : member
         );
         setMembers(updatedMembers);
         message.success('회원 정보가 수정되었습니다.');
       } else {
         // 추가
-        // const response = await memberService.create(values);
-        
-        // Mock 추가
-        const newMember: Member = {
-          id: Math.max(...members.map(m => m.id)) + 1,
-          memberNumber: generateMemberNumber(),
-          ...values,
-          status: values.status || 'ACTIVE',
-          registrationDate: new Date().toISOString().split('T')[0],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
+        const response = await memberService.create(values);
+        const newMember = response.data;
         setMembers([...members, newMember]);
         message.success('회원이 추가되었습니다.');
       }
@@ -440,7 +331,7 @@ const MemberList: React.FC = () => {
               marginBottom: '16px',
               color: '#666'
             }}>
-              📋 회원번호는 자동으로 생성됩니다: {generateMemberNumber()}
+              📋 회원번호는 서버에서 자동으로 생성됩니다.
             </div>
           )}
 

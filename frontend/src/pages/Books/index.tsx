@@ -23,6 +23,7 @@ import {
   BookOutlined,
 } from '@ant-design/icons';
 import { bookService } from '../../services/bookService';
+import { formatDate, getErrorMessage } from '../../utils';
 
 // 로컬 타입 정의
 interface Book {
@@ -47,15 +48,6 @@ interface BookCreateRequest {
   publishedDate?: string;
 }
 
-// Utils 함수들 (임시)
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('ko-KR');
-};
-
-const getErrorMessage = (error: any) => {
-  return error?.message || '오류가 발생했습니다.';
-};
-
 const { Title } = Typography;
 const { Search } = Input;
 
@@ -67,70 +59,6 @@ const BookList: React.FC = () => {
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [form] = Form.useForm();
 
-  // Mock 데이터
-  const mockBooks: Book[] = [
-    {
-      id: 1,
-      title: '클린 코드',
-      author: '로버트 마틴',
-      isbn: '9788966260959',
-      totalCopies: 5,
-      availableCopies: 3,
-      category: '프로그래밍',
-      publishedDate: '2013-12-24',
-      createdAt: '2025-01-01T00:00:00',
-      updatedAt: '2025-01-01T00:00:00',
-    },
-    {
-      id: 2,
-      title: '이펙티브 자바',
-      author: '조슈아 블로크',
-      isbn: '9788966262281',
-      totalCopies: 3,
-      availableCopies: 1,
-      category: '프로그래밍',
-      publishedDate: '2018-11-01',
-      createdAt: '2025-01-01T00:00:00',
-      updatedAt: '2025-01-01T00:00:00',
-    },
-    {
-      id: 3,
-      title: 'Spring Boot 실전 가이드',
-      author: '김영한',
-      isbn: '9788966263158',
-      totalCopies: 4,
-      availableCopies: 4,
-      category: '프레임워크',
-      publishedDate: '2022-03-15',
-      createdAt: '2025-01-01T00:00:00',
-      updatedAt: '2025-01-01T00:00:00',
-    },
-    {
-      id: 4,
-      title: 'React 완벽 가이드',
-      author: '김민준',
-      isbn: '9788966263789',
-      totalCopies: 2,
-      availableCopies: 0,
-      category: '프론트엔드',
-      publishedDate: '2023-06-20',
-      createdAt: '2025-01-01T00:00:00',
-      updatedAt: '2025-01-01T00:00:00',
-    },
-    {
-      id: 5,
-      title: 'TypeScript 핸드북',
-      author: '마이크로소프트',
-      isbn: '9788966264125',
-      totalCopies: 3,
-      availableCopies: 2,
-      category: '프로그래밍',
-      publishedDate: '2023-09-10',
-      createdAt: '2025-01-01T00:00:00',
-      updatedAt: '2025-01-01T00:00:00',
-    },
-  ];
-
   useEffect(() => {
     loadBooks();
   }, []);
@@ -141,12 +69,6 @@ const BookList: React.FC = () => {
       // 실제 API 호출
       const response = await bookService.getAll();
       setBooks(response.data);
-      
-      // Mock 데이터 사용 (비활성화)
-      // setTimeout(() => {
-      //   setBooks(mockBooks);
-      //   setLoading(false);
-      // }, 500);
       setLoading(false);
     } catch (error) {
       message.error(getErrorMessage(error));
@@ -164,16 +86,8 @@ const BookList: React.FC = () => {
     try {
       setLoading(true);
       // 실제 API 호출
-      // const response = await bookService.search(value);
-      // setBooks(response.data.data);
-      
-      // Mock 검색
-      const filtered = mockBooks.filter(book =>
-        book.title.toLowerCase().includes(value.toLowerCase()) ||
-        book.author.toLowerCase().includes(value.toLowerCase()) ||
-        book.isbn.includes(value)
-      );
-      setBooks(filtered);
+      const response = await bookService.search(value);
+      setBooks(response.data);
       setLoading(false);
     } catch (error) {
       message.error(getErrorMessage(error));
@@ -203,9 +117,7 @@ const BookList: React.FC = () => {
   const handleDelete = async (id: number) => {
     try {
       // 실제 API 호출
-      // await bookService.delete(id);
-      
-      // Mock 삭제
+      await bookService.delete(id);
       setBooks(books.filter(book => book.id !== id));
       message.success('도서가 삭제되었습니다.');
     } catch (error) {
@@ -219,28 +131,17 @@ const BookList: React.FC = () => {
       
       if (editingBook) {
         // 수정
-        // const response = await bookService.update(editingBook.id, values);
-        
-        // Mock 수정
+        const response = await bookService.update(editingBook.id, values);
+        const updatedBook = response.data;
         const updatedBooks = books.map(book =>
-          book.id === editingBook.id
-            ? { ...book, ...values, updatedAt: new Date().toISOString() }
-            : book
+          book.id === editingBook.id ? updatedBook : book
         );
         setBooks(updatedBooks);
         message.success('도서가 수정되었습니다.');
       } else {
         // 추가
-        // const response = await bookService.create(values);
-        
-        // Mock 추가
-        const newBook: Book = {
-          id: Math.max(...books.map(b => b.id)) + 1,
-          ...values,
-          availableCopies: values.totalCopies,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
+        const response = await bookService.create(values);
+        const newBook = response.data;
         setBooks([...books, newBook]);
         message.success('도서가 추가되었습니다.');
       }

@@ -31,6 +31,8 @@ import {
   ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import { loanService, bookService, memberService } from '../../services';
+import { formatDate, getErrorMessage } from '../../utils';
 
 // 타입 정의 (임시)
 interface Book {
@@ -77,15 +79,6 @@ interface LoanCreateRequest {
   memberId: number;
 }
 
-// Utils 함수들 (임시)
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('ko-KR');
-};
-
-const getErrorMessage = (error: any) => {
-  return error?.message || '오류가 발생했습니다.';
-};
-
 const { Title } = Typography;
 const { Search } = Input;
 const { Option } = Select;
@@ -103,98 +96,6 @@ const LoanList: React.FC = () => {
   const [form] = Form.useForm();
   const [returnForm] = Form.useForm();
 
-  // Mock 데이터
-  const mockBooks: Book[] = [
-    {
-      id: 1,
-      title: '클린 코드',
-      author: '로버트 마틴',
-      isbn: '9788966260959',
-      totalCopies: 5,
-      availableCopies: 3,
-      category: '프로그래밍',
-      publishedDate: '2013-12-24',
-      createdAt: '2025-01-01T00:00:00',
-      updatedAt: '2025-01-01T00:00:00',
-    },
-    {
-      id: 2,
-      title: '이펙티브 자바',
-      author: '조슈아 블로크',
-      isbn: '9788966262281',
-      totalCopies: 3,
-      availableCopies: 1,
-      category: '프로그래밍',
-      publishedDate: '2018-11-01',
-      createdAt: '2025-01-01T00:00:00',
-      updatedAt: '2025-01-01T00:00:00',
-    },
-  ];
-
-  const mockMembers: Member[] = [
-    {
-      id: 1,
-      memberNumber: 'M2025001',
-      name: '김철수',
-      email: 'kim.cs@email.com',
-      phone: '010-1234-5678',
-      address: '서울시 강남구 역삼동 123-45',
-      status: 'ACTIVE',
-      registrationDate: '2025-01-15',
-      createdAt: '2025-01-15T09:00:00',
-      updatedAt: '2025-01-15T09:00:00',
-    },
-    {
-      id: 2,
-      memberNumber: 'M2025002',
-      name: '이영희',
-      email: 'lee.yh@email.com',
-      phone: '010-2345-6789',
-      address: '서울시 서초구 서초동 456-78',
-      status: 'ACTIVE',
-      registrationDate: '2025-01-20',
-      createdAt: '2025-01-20T10:30:00',
-      updatedAt: '2025-01-20T10:30:00',
-    },
-  ];
-
-  const mockLoans: Loan[] = [
-    {
-      id: 1,
-      book: mockBooks[0],
-      member: mockMembers[0],
-      loanDate: '2025-09-10',
-      dueDate: '2025-09-24',
-      status: 'ACTIVE',
-      overdueFee: 0,
-      createdAt: '2025-09-10T10:00:00',
-      updatedAt: '2025-09-10T10:00:00',
-    },
-    {
-      id: 2,
-      book: mockBooks[1],
-      member: mockMembers[1],
-      loanDate: '2025-09-05',
-      dueDate: '2025-09-19',
-      status: 'OVERDUE',
-      overdueFee: 300, // 3일 연체 (100원 × 3일)
-      createdAt: '2025-09-05T14:30:00',
-      updatedAt: '2025-09-16T00:00:00',
-    },
-    {
-      id: 3,
-      book: mockBooks[0],
-      member: mockMembers[0],
-      loanDate: '2025-08-20',
-      dueDate: '2025-09-03',
-      returnDate: '2025-09-01',
-      status: 'RETURNED',
-      overdueFee: 0,
-      createdAt: '2025-08-20T11:15:00',
-      updatedAt: '2025-09-01T16:20:00',
-    },
-  ];
-
   useEffect(() => {
     loadLoans();
     loadBooksAndMembers();
@@ -204,14 +105,9 @@ const LoanList: React.FC = () => {
     try {
       setLoading(true);
       // 실제 API 호출
-      // const response = await loanService.getAll();
-      // setLoans(response.data.data);
-      
-      // Mock 데이터 사용
-      setTimeout(() => {
-        setLoans(mockLoans);
-        setLoading(false);
-      }, 500);
+      const response = await loanService.getAll();
+      setLoans(response.data);
+      setLoading(false);
     } catch (error) {
       message.error(getErrorMessage(error));
       setLoading(false);
@@ -221,16 +117,12 @@ const LoanList: React.FC = () => {
   const loadBooksAndMembers = async () => {
     try {
       // 실제 API 호출
-      // const [booksResponse, membersResponse] = await Promise.all([
-      //   bookService.getAll(),
-      //   memberService.getAll()
-      // ]);
-      // setBooks(booksResponse.data.data);
-      // setMembers(membersResponse.data.data);
-      
-      // Mock 데이터 사용
-      setBooks(mockBooks);
-      setMembers(mockMembers);
+      const [booksResponse, membersResponse] = await Promise.all([
+        bookService.getAll(),
+        memberService.getAll()
+      ]);
+      setBooks(booksResponse.data);
+      setMembers(membersResponse.data);
     } catch (error) {
       message.error(getErrorMessage(error));
     }
@@ -245,14 +137,9 @@ const LoanList: React.FC = () => {
 
     try {
       setLoading(true);
-      // Mock 검색
-      const filtered = mockLoans.filter(loan =>
-        loan.book.title.toLowerCase().includes(value.toLowerCase()) ||
-        loan.member.name.toLowerCase().includes(value.toLowerCase()) ||
-        loan.member.memberNumber.includes(value) ||
-        loan.book.isbn.includes(value)
-      );
-      setLoans(filtered);
+      // 실제 API 호출
+      const response = await loanService.search(value);
+      setLoans(response.data);
       setLoading(false);
     } catch (error) {
       message.error(getErrorMessage(error));
@@ -283,9 +170,7 @@ const LoanList: React.FC = () => {
   const handleDelete = async (id: number) => {
     try {
       // 실제 API 호출
-      // await loanService.delete(id);
-      
-      // Mock 삭제
+      await loanService.delete(id);
       setLoans(loans.filter(loan => loan.id !== id));
       message.success('대출 기록이 삭제되었습니다.');
     } catch (error) {
@@ -331,22 +216,16 @@ const LoanList: React.FC = () => {
       }
 
       // 실제 API 호출
-      // const response = await loanService.create(values);
-      
-      // Mock 추가
-      const newLoan: Loan = {
-        id: Math.max(...loans.map(l => l.id)) + 1,
-        book: selectedBook,
-        member: selectedMember,
+      const loanData = {
+        bookId: values.bookId,
+        memberId: values.memberId,
         loanDate: values.loanDate.format('YYYY-MM-DD'),
-        dueDate: values.dueDate.format('YYYY-MM-DD'),
-        status: 'ACTIVE',
-        overdueFee: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        dueDate: values.dueDate.format('YYYY-MM-DD')
       };
+      const response = await loanService.create(loanData);
       
-      setLoans([...loans, newLoan]);
+      // 대출 목록 새로고침
+      loadLoans();
       message.success('도서가 대출되었습니다.');
       
       setIsModalVisible(false);
@@ -369,22 +248,13 @@ const LoanList: React.FC = () => {
       const overdueFee = calculateOverdueFee(returningLoan.dueDate, returnDate);
       
       // 실제 API 호출
-      // await loanService.returnBook(returningLoan.id, { returnDate });
+      const returnData = {
+        returnDate: returnDate
+      };
+      await loanService.returnBook(returningLoan.id, returnData);
       
-      // Mock 반납
-      const updatedLoans = loans.map(loan =>
-        loan.id === returningLoan.id
-          ? {
-              ...loan,
-              returnDate,
-              status: 'RETURNED' as const,
-              overdueFee,
-              updatedAt: new Date().toISOString()
-            }
-          : loan
-      );
-      
-      setLoans(updatedLoans);
+      // 대출 목록 새로고침
+      loadLoans();
       
       if (overdueFee > 0) {
         message.success(`도서가 반납되었습니다. 연체료: ${overdueFee}원`);

@@ -18,12 +18,15 @@ import org.springframework.web.bind.annotation.RestController;
 import com.days.book.entity.Book;
 import com.days.book.service.BookService;
 
+import org.springframework.web.bind.annotation.CrossOrigin;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/books")
 @RequiredArgsConstructor
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176", "http://localhost:3000"})
 public class BookController {
 
     private final BookService bookService;

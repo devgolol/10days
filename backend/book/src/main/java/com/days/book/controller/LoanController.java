@@ -19,11 +19,14 @@ import com.days.book.entity.Loan;
 import com.days.book.entity.Loan.LoanStatus;
 import com.days.book.service.LoanService;
 
+import org.springframework.web.bind.annotation.CrossOrigin;
+
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/loans")
 @RequiredArgsConstructor
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176", "http://localhost:3000"})
 public class LoanController {
 
     private final LoanService loanService;

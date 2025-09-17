@@ -21,12 +21,15 @@ import com.days.book.entity.Member;
 import com.days.book.entity.Member.MemberStatus;
 import com.days.book.service.MemberService;
 
+import org.springframework.web.bind.annotation.CrossOrigin;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/members")
 @RequiredArgsConstructor
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176", "http://localhost:3000"})
 public class MemberController {
 
     private final MemberService memberService;

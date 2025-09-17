@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { Card, Row, Col, Statistic, Table, Tag, Typography, Space, Alert } from 'antd';
 import {
   BookOutlined,
@@ -8,134 +8,52 @@ import {
 } from '@ant-design/icons';
 import { dashboardService } from '../../services';
 import { formatDate, formatCurrency, getErrorMessage } from '../../utils';
+import { AuthContext } from '../../App';
 
 const { Title } = Typography;
 
 interface DashboardData {
-  totalBooks: number;
-  totalMembers: number;
+  totalBooks?: number;
+  totalMembers?: number;
   activeLoans: number;
   overdueLoans: number;
   recentLoans: any[];
+  myActiveLoans?: number;
+  myOverdueLoans?: number;
+  myTotalLoans?: number;
 }
 
 const Dashboard: React.FC = () => {
+  const authContext = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DashboardData>({
-    totalBooks: 0,
-    totalMembers: 0,
     activeLoans: 0,
     overdueLoans: 0,
     recentLoans: [],
   });
   const [error, setError] = useState<string | null>(null);
 
-  // Mock 데이터 (백엔드 연동 전까지 사용)
-  const mockData: DashboardData = {
-    totalBooks: 1250,
-    totalMembers: 350,
-    activeLoans: 89,
-    overdueLoans: 12,
-    recentLoans: [
-      {
-        id: 1,
-        bookTitle: '클린 코드',
-        memberName: '김철수',
-        loanDate: '2025-09-10',
-        dueDate: '2025-09-24',
-        status: 'ACTIVE',
-      },
-      {
-        id: 2,
-        bookTitle: '이펙티브 자바',
-        memberName: '이영희',
-        loanDate: '2025-09-12',
-        dueDate: '2025-09-26',
-        status: 'ACTIVE',
-      },
-      {
-        id: 3,
-        bookTitle: 'Spring Boot 실전 가이드',
-        memberName: '박민수',
-        loanDate: '2025-09-05',
-        dueDate: '2025-09-19',
-        status: 'OVERDUE',
-      },
-      {
-        id: 4,
-        bookTitle: 'React 완벽 가이드',
-        memberName: '최수진',
-        loanDate: '2025-09-14',
-        dueDate: '2025-09-28',
-        status: 'ACTIVE',
-      },
-      {
-        id: 5,
-        bookTitle: 'TypeScript 핸드북',
-        memberName: '정대현',
-        loanDate: '2025-09-08',
-        dueDate: '2025-09-22',
-        status: 'ACTIVE',
-      },
-    ],
-  };
-
   useEffect(() => {
     loadDashboardData();
-  }, []);
+  }, [authContext]);
 
   const loadDashboardData = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // 실제 API 호출 시도
-      try {
+      // 사용자 역할에 따라 다른 API 호출
+      if (authContext?.role === 'ADMIN') {
+        // 관리자: 전체 통계
         const response = await dashboardService.getStats();
         setData(response.data.data);
-        setLoading(false);
-        return;
-      } catch (apiError) {
-        // API 호출 실패 시 실제 데이터와 일치하는 mock 데이터 사용
-        console.warn('API 호출 실패, mock 데이터 사용:', apiError);
-        
-        const realMockData: DashboardData = {
-          totalBooks: 1,
-          totalMembers: 5,
-          activeLoans: 1,
-          overdueLoans: 1,
-          recentLoans: [
-            {
-              id: 1,
-              bookTitle: '클린 코드',
-              memberName: '김철수',
-              loanDate: '2025-09-10',
-              dueDate: '2025-09-24',
-              status: 'ACTIVE',
-            },
-            {
-              id: 2,
-              bookTitle: '이펙티브 자바',
-              memberName: '이영희',
-              loanDate: '2025-09-05',
-              dueDate: '2025-09-19',
-              status: 'OVERDUE',
-            },
-            {
-              id: 3,
-              bookTitle: '클린 코드',
-              memberName: '김철수',
-              loanDate: '2025-08-20',
-              dueDate: '2025-09-03',
-              status: 'RETURNED',
-            },
-          ],
-        };
-        
-        setData(realMockData);
-        setLoading(false);
+      } else {
+        // 일반 사용자: 개인 통계
+        const response = await dashboardService.getMyStats();
+        setData(response.data.data);
       }
       
+      setLoading(false);
     } catch (err) {
       setError(getErrorMessage(err));
       setLoading(false);
@@ -204,54 +122,101 @@ const Dashboard: React.FC = () => {
       
       {/* 통계 카드 */}
       <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="전체 도서"
-              value={data.totalBooks}
-              prefix={<BookOutlined />}
-              loading={loading}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="전체 회원"
-              value={data.totalMembers}
-              prefix={<UserOutlined />}
-              loading={loading}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="대출중인 도서"
-              value={data.activeLoans}
-              prefix={<FileTextOutlined />}
-              loading={loading}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="연체 도서"
-              value={data.overdueLoans}
-              prefix={<ExclamationCircleOutlined />}
-              valueStyle={{ color: '#cf1322' }}
-              loading={loading}
-            />
-          </Card>
-        </Col>
+        {authContext?.role === 'ADMIN' ? (
+          // 관리자용 통계
+          <>
+            <Col span={6}>
+              <Card>
+                <Statistic
+                  title="전체 도서"
+                  value={data.totalBooks || 0}
+                  prefix={<BookOutlined />}
+                  loading={loading}
+                />
+              </Card>
+            </Col>
+            <Col span={6}>
+              <Card>
+                <Statistic
+                  title="전체 회원"
+                  value={data.totalMembers || 0}
+                  prefix={<UserOutlined />}
+                  loading={loading}
+                />
+              </Card>
+            </Col>
+            <Col span={6}>
+              <Card>
+                <Statistic
+                  title="대출중인 도서"
+                  value={data.activeLoans}
+                  prefix={<FileTextOutlined />}
+                  loading={loading}
+                />
+              </Card>
+            </Col>
+            <Col span={6}>
+              <Card>
+                <Statistic
+                  title="연체 도서"
+                  value={data.overdueLoans}
+                  prefix={<ExclamationCircleOutlined />}
+                  valueStyle={{ color: '#cf1322' }}
+                  loading={loading}
+                />
+              </Card>
+            </Col>
+          </>
+        ) : (
+          // 일반 사용자용 통계
+          <>
+            <Col span={8}>
+              <Card>
+                <Statistic
+                  title="나의 대출중인 도서"
+                  value={data.myActiveLoans || 0}
+                  prefix={<FileTextOutlined />}
+                  loading={loading}
+                />
+              </Card>
+            </Col>
+            <Col span={8}>
+              <Card>
+                <Statistic
+                  title="나의 연체 도서"
+                  value={data.myOverdueLoans || 0}
+                  prefix={<ExclamationCircleOutlined />}
+                  valueStyle={{ color: '#cf1322' }}
+                  loading={loading}
+                />
+              </Card>
+            </Col>
+            <Col span={8}>
+              <Card>
+                <Statistic
+                  title="나의 총 대출 이력"
+                  value={data.myTotalLoans || 0}
+                  prefix={<BookOutlined />}
+                  loading={loading}
+                />
+              </Card>
+            </Col>
+          </>
+        )}
       </Row>
 
       {/* 연체 알림 */}
-      {data.overdueLoans > 0 && (
+      {((authContext?.role === 'ADMIN' && data.overdueLoans > 0) || 
+        (authContext?.role === 'USER' && (data.myOverdueLoans || 0) > 0)) && (
         <Alert
-          message={`현재 ${data.overdueLoans}건의 연체가 있습니다.`}
-          description="연체된 도서를 확인하고 회원에게 알림을 보내주세요."
+          message={authContext?.role === 'ADMIN' 
+            ? `현재 ${data.overdueLoans}건의 연체가 있습니다.`
+            : `${data.myOverdueLoans}건의 연체 도서가 있습니다.`
+          }
+          description={authContext?.role === 'ADMIN'
+            ? "연체된 도서를 확인하고 회원에게 알림을 보내주세요."
+            : "연체된 도서를 반납해주세요."
+          }
           type="warning"
           showIcon
           style={{ marginBottom: 24 }}
@@ -266,7 +231,7 @@ const Dashboard: React.FC = () => {
       )}
 
       {/* 최근 대출 목록 */}
-      <Card title="최근 대출 목록" style={{ marginBottom: 24 }}>
+      <Card title={authContext?.role === 'ADMIN' ? "최근 대출 목록" : "나의 최근 대출 목록"} style={{ marginBottom: 24 }}>
         <Table
           columns={recentLoansColumns}
           dataSource={data.recentLoans}

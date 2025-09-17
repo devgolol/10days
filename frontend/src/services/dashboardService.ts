@@ -49,13 +49,21 @@ interface DashboardStats {
 }
 
 export const dashboardService = {
-  // 대시보드 통계 조회
+  // 대시보드 통계 조회 (관리자용)
   getStats: () => 
     apiClient.get<ApiResponse<DashboardStats>>('/dashboard/stats'),
+
+  // 개인 대시보드 통계 조회 (사용자용)
+  getMyStats: () => 
+    apiClient.get<ApiResponse<any>>('/dashboard/my-stats'),
 
   // 최근 대출 목록
   getRecentLoans: (limit: number = 10) => 
     apiClient.get<ApiResponse<any[]>>(`/dashboard/recent-loans?limit=${limit}`),
+
+  // 개인 최근 대출 목록
+  getMyRecentLoans: (limit: number = 10) => 
+    apiClient.get<ApiResponse<any[]>>(`/dashboard/my-recent-loans?limit=${limit}`),
 
   // 인기 도서 Top 10
   getPopularBooks: (limit: number = 10) => 

@@ -55,7 +55,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       key: '/loans',
       icon: <FileTextOutlined />,
       label: '대출 관리',
-      roles: ['ADMIN'], // 관리자만 접근 가능
+      roles: ['ADMIN', 'USER'], // 관리자와 일반 사용자 모두 접근 가능
     },
   ];
 

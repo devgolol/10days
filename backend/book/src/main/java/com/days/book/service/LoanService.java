@@ -11,7 +11,9 @@ import com.days.book.entity.Loan;
 import com.days.book.entity.Loan.LoanStatus;
 import com.days.book.entity.Member;
 import com.days.book.entity.Member.MemberStatus;
+import com.days.book.entity.User;
 import com.days.book.repository.LoanRepository;
+import com.days.book.repository.UserRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.Builder;
@@ -26,6 +28,7 @@ public class LoanService {
     private final LoanRepository loanRepository;
     private final BookService bookService;
     private final MemberService memberService;
+    private final UserRepository userRepository;
 
     /**
      * 도서 대출
@@ -263,6 +266,64 @@ public class LoanService {
         
         if (alreadyBorrowed) {
             throw new RuntimeException("이미 대출 중인 도서입니다.");
+        }
+    }
+    
+    /**
+     * User ID 기반 대출 관련 메서드들
+     */
+    
+    @Transactional(readOnly = true)
+    public long getActiveLoansByUserId(Long userId) {
+        try {
+            User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+            Member member = memberService.getMemberByEmail(user.getEmail());
+            return loanRepository.countByMemberAndStatus(member, LoanStatus.ACTIVE);
+        } catch (Exception e) {
+            return 0; // Member가 없으면 0 반환
+        }
+    }
+    
+    @Transactional(readOnly = true)
+    public long getOverdueLoansByUserId(Long userId) {
+        try {
+            User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+            Member member = memberService.getMemberByEmail(user.getEmail());
+            List<Loan> activeLoans = loanRepository.findByMemberAndStatus(member, LoanStatus.ACTIVE);
+            return activeLoans.stream()
+                .filter(loan -> loan.getDueDate().isBefore(LocalDate.now()))
+                .count();
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+    
+    @Transactional(readOnly = true)
+    public long getTotalLoansByUserId(Long userId) {
+        try {
+            User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+            Member member = memberService.getMemberByEmail(user.getEmail());
+            return loanRepository.findByMemberOrderByLoanDateDesc(member).size();
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+    
+    @Transactional(readOnly = true)
+    public List<Loan> getRecentLoansByUserId(Long userId, int limit) {
+        try {
+            User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+            Member member = memberService.getMemberByEmail(user.getEmail());
+            List<Loan> allLoans = loanRepository.findByMemberOrderByLoanDateDesc(member);
+            return allLoans.stream()
+                .limit(limit)
+                .toList();
+        } catch (Exception e) {
+            return List.of(); // 빈 리스트 반환
         }
     }
 
