@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -35,26 +36,47 @@ public class AuthService {
      * 회원가입
      */
     public String register(String username, String password, String email) {
-        // 중복 확인
-        if (userRepository.findByUsername(username).isPresent()) {
+        // 중복 확인 - 미인증 계정은 덮어쓰기 허용
+        Optional<User> existingUser = userRepository.findByUsername(username);
+        if (existingUser.isPresent() && existingUser.get().getEmailVerified()) {
             throw new RuntimeException("이미 존재하는 사용자명입니다.");
         }
-        if (userRepository.findByEmail(email).isPresent()) {
+        
+        Optional<User> existingEmailUser = userRepository.findByEmail(email);
+        if (existingEmailUser.isPresent() && existingEmailUser.get().getEmailVerified()) {
             throw new RuntimeException("이미 존재하는 이메일입니다.");
         }
 
         // 이메일 인증 토큰 생성
         String verificationToken = emailService.generateEmailVerificationToken();
 
-        // 사용자 생성
-        User user = User.builder()
-                .username(username)
-                .password(passwordEncoder.encode(password))
-                .email(email)
-                .role(Role.USER)
-                .emailVerified(false)
-                .emailVerificationToken(verificationToken)
-                .build();
+        // 기존 미인증 계정이 있으면 업데이트, 없으면 새로 생성
+        User user;
+        if (existingUser.isPresent() && !existingUser.get().getEmailVerified()) {
+            // 기존 미인증 계정 업데이트
+            user = existingUser.get();
+            user.setPassword(passwordEncoder.encode(password));
+            user.setEmail(email);
+            user.setEmailVerificationToken(verificationToken);
+            user.setUpdatedAt(java.time.LocalDateTime.now());
+        } else if (existingEmailUser.isPresent() && !existingEmailUser.get().getEmailVerified()) {
+            // 기존 미인증 이메일 계정 업데이트
+            user = existingEmailUser.get();
+            user.setUsername(username);
+            user.setPassword(passwordEncoder.encode(password));
+            user.setEmailVerificationToken(verificationToken);
+            user.setUpdatedAt(java.time.LocalDateTime.now());
+        } else {
+            // 새 사용자 생성
+            user = User.builder()
+                    .username(username)
+                    .password(passwordEncoder.encode(password))
+                    .email(email)
+                    .role(Role.USER)
+                    .emailVerified(false)
+                    .emailVerificationToken(verificationToken)
+                    .build();
+        }
 
         userRepository.save(user);
 
@@ -76,8 +98,9 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
         // admin 계정은 이메일 인증 우회 (테스트 및 관리자 계정)
+        // 미인증 계정은 존재하지 않는 계정으로 처리하여 보안 강화 및 UX 개선
         if (!user.getEmailVerified() && !username.equals("admin")) {
-            throw new RuntimeException("이메일 인증이 완료되지 않았습니다.");
+            throw new RuntimeException("사용자명 또는 비밀번호가 잘못되었습니다.");
         }
 
         String token = jwtService.generateToken(user);
