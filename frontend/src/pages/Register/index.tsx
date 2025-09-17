@@ -158,7 +158,7 @@ const Register: React.FC = () => {
                 border: 'none',
                 textAlign: 'center'
               }}
-              bodyStyle={{ padding: '40px' }}
+              styles={{ body: { padding: '40px' } }}
             >
               <Space direction="vertical" size="large" style={{ width: '100%' }}>
                 <CheckCircleOutlined style={{ fontSize: '72px', color: '#52c41a' }} />
@@ -237,7 +237,7 @@ const Register: React.FC = () => {
               borderRadius: '12px',
               border: 'none'
             }}
-            bodyStyle={{ padding: '40px' }}
+            styles={{ body: { padding: '40px' } }}
           >
             <Space direction="vertical" size="large" style={{ width: '100%', textAlign: 'center' }}>
               {/* 로고 및 제목 */}

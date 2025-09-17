@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Layout, Menu, theme, Avatar, Dropdown, Space, message } from 'antd';
 import {
   DashboardOutlined,
@@ -17,6 +17,7 @@ const { Header, Sider, Content } = Layout;
 
 const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
+  const [dropdownVisible, setDropdownVisible] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const authContext = useContext(AuthContext);
@@ -31,6 +32,23 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const { username, role, logout } = authContext;
 
+  // 외부 클릭시 드롭다운 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownVisible) {
+        setDropdownVisible(false);
+      }
+    };
+
+    if (dropdownVisible) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [dropdownVisible]);
+
   // 메뉴 아이템 정의 - 역할별 권한 제어
   const allMenuItems = [
     {
@@ -43,7 +61,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       key: '/books',
       icon: <BookOutlined />,
       label: '도서 관리',
-      roles: ['ADMIN'], // 관리자만 접근 가능
+      roles: ['ADMIN', 'USER'], // USER도 조회 가능
     },
     {
       key: '/members',
@@ -76,15 +94,6 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         label: '설정',
       },
     ];
-
-    // USER 역할인 경우 회원탈퇴 메뉴 추가
-    if (role === 'USER') {
-      baseItems.push({
-        key: 'withdraw',
-        icon: <UserOutlined />,
-        label: '회원탈퇴',
-      });
-    }
 
     baseItems.push(
       {
@@ -119,11 +128,6 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         break;
       case 'settings':
         navigate('/settings');
-        break;
-      case 'withdraw':
-        // 회원탈퇴 확인 모달 표시
-        // TODO: 회원탈퇴 기능 구현
-        message.info('회원탈퇴 기능은 추후 구현 예정입니다.');
         break;
     }
   };
@@ -172,19 +176,73 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             )}
           </div>
           
-          <div>
-            <Dropdown
-              menu={{
-                items: userMenuItems,
-                onClick: handleUserMenuClick,
+          <div style={{ position: 'relative' }}>
+            <Space 
+              style={{ 
+                cursor: 'pointer', 
+                padding: '4px 8px', 
+                borderRadius: '4px',
+                backgroundColor: dropdownVisible ? '#f0f0f0' : 'transparent'
               }}
-              placement="bottomRight"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDropdownVisible(!dropdownVisible);
+              }}
             >
-              <Space style={{ cursor: 'pointer' }}>
-                <Avatar size="small" icon={<UserOutlined />} />
-                <span>{username} ({role})</span>
-              </Space>
-            </Dropdown>
+              <Avatar size="small" icon={<UserOutlined />} />
+              <span>{username} ({role})</span>
+            </Space>
+            
+            {/* 직접 관리하는 드롭다운 메뉴 */}
+            {dropdownVisible && (
+              <div
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: '100%',
+                  marginTop: '4px',
+                  backgroundColor: 'white',
+                  border: '1px solid #d9d9d9',
+                  borderRadius: '6px',
+                  boxShadow: '0 6px 16px 0 rgba(0, 0, 0, 0.08)',
+                  zIndex: 1000,
+                  minWidth: '160px',
+                  padding: '4px 0'
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {userMenuItems.map((item, index) => (
+                  item.type === 'divider' ? (
+                    <div key={index} style={{ height: '1px', backgroundColor: '#f0f0f0', margin: '4px 0' }} />
+                  ) : (
+                    <div
+                      key={item.key}
+                      style={{
+                        padding: '5px 12px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        color: item.danger ? '#ff4d4f' : undefined,
+                        fontSize: '14px'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#f5f5f5';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                      onClick={() => {
+                        handleUserMenuClick({ key: item.key });
+                        setDropdownVisible(false);
+                      }}
+                    >
+                      <span style={{ marginRight: '8px' }}>{item.icon}</span>
+                      <span>{item.label}</span>
+                    </div>
+                  )
+                ))}
+              </div>
+            )}
           </div>
         </Header>
         

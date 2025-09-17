@@ -26,6 +26,7 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) throws Exception {
         createDefaultAdminUser();
         createDefaultTestUser();
+        createMemberForExistingUsers(); // 기존 사용자들을 위한 Member 생성
         // MOCK 데이터 생성 비활성화 - 실제 운영을 위해 샘플 데이터 제거
         // createSampleMembers();
         // createSampleBooks();
@@ -63,6 +64,46 @@ public class DataInitializer implements CommandLineRunner {
             log.info("Default test user created: username=user, password=user123");
         } else {
             log.info("Test user already exists");
+        }
+    }
+
+    private void createMemberForExistingUsers() {
+        // 기존 사용자들을 위한 Member 생성 로직 비활성화
+        // 유미 회원 자동 생성 제거 - 삭제 후 재생성 방지
+        /*
+        // yuumi5654 사용자를 위한 Member 생성
+        if (!memberRepository.existsByEmail("yuumi5654@gmail.com")) {
+            Member yuumiMember = Member.builder()
+                    .memberNumber("M2025010")
+                    .name("유미")
+                    .email("yuumi5654@gmail.com")
+                    .phone("010-5654-5654")
+                    .address("서울시 강남구")
+                    .status(Member.MemberStatus.ACTIVE)
+                    .joinDate(LocalDate.now())
+                    .maxLoanCount(5)
+                    .build();
+            
+            memberRepository.save(yuumiMember);
+            log.info("Member created for yuumi5654@gmail.com");
+        }
+        */
+
+        // admin 사용자를 위한 Member 생성  
+        if (!memberRepository.existsByEmail("admin@library.com")) {
+            Member adminMember = Member.builder()
+                    .memberNumber("M2025011")
+                    .name("관리자")
+                    .email("admin@library.com")
+                    .phone("010-0000-0000")
+                    .address("도서관 사무실")
+                    .status(Member.MemberStatus.ACTIVE)
+                    .joinDate(LocalDate.now())
+                    .maxLoanCount(10)
+                    .build();
+            
+            memberRepository.save(adminMember);
+            log.info("Member created for admin@library.com");
         }
     }
 

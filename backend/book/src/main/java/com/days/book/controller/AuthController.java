@@ -2,21 +2,32 @@ package com.days.book.controller;
 
 import com.days.book.service.AuthService;
 import com.days.book.service.JwtService;
+import com.days.book.entity.User;
+import com.days.book.entity.Role;
+import com.days.book.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176", "http://localhost:3000"})
+@Slf4j
 public class AuthController {
 
     private final AuthService authService;
     private final JwtService jwtService;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     /**
      * 회원가입
@@ -125,31 +136,6 @@ public class AuthController {
         }
     }
     
-    /**
-     * 회원탈퇴
-     */
-    @PostMapping("/withdraw")
-    public ResponseEntity<Map<String, String>> withdraw(@RequestBody WithdrawRequest request, 
-                                                       HttpServletRequest httpRequest) {
-        try {
-            // JWT 토큰에서 사용자명 추출
-            String token = extractTokenFromHeader(httpRequest);
-            String username = jwtService.extractUsername(token);
-            
-            String message = authService.withdrawUser(username, request.getPassword());
-            return ResponseEntity.ok(Map.of("message", message));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    private String extractTokenFromHeader(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
-        }
-        throw new RuntimeException("인증 토큰이 필요합니다.");
-    }
     @PostMapping("/reset-password/set-new")
     public ResponseEntity<Map<String, String>> setNewPassword(@RequestBody SetNewPasswordRequest request) {
         try {
@@ -261,6 +247,49 @@ public class AuthController {
         public void setCode(String code) { this.code = code; }
         public String getNewPassword() { return newPassword; }
         public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
+    }
+    
+    /**
+     * 회원탈퇴
+     */
+    @PostMapping("/withdraw")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> withdraw(@RequestBody WithdrawRequest request, Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            String username = authentication.getName();
+            
+            // 관리자 계정은 탈퇴 불가
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+            
+            if (user.getRole() == Role.ADMIN) {
+                response.put("success", false);
+                response.put("error", "관리자 계정은 탈퇴할 수 없습니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // 비밀번호 확인
+            if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+                response.put("success", false);
+                response.put("error", "비밀번호가 일치하지 않습니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // 회원 정보 삭제 (실제로는 상태 변경이나 soft delete 권장)
+            userRepository.delete(user);
+            
+            response.put("success", true);
+            response.put("message", "회원탈퇴가 완료되었습니다.");
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("Withdraw error: {}", e.getMessage());
+            response.put("success", false);
+            response.put("error", "회원탈퇴 처리 중 오류가 발생했습니다.");
+            return ResponseEntity.internalServerError().body(response);
+        }
     }
     
     public static class WithdrawRequest {

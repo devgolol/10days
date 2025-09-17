@@ -6,6 +6,7 @@ import com.days.book.entity.VerificationCode;
 import com.days.book.entity.VerificationCode.VerificationType;
 import com.days.book.repository.UserRepository;
 import com.days.book.repository.VerificationCodeRepository;
+import com.days.book.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +33,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final EmailService emailService;
     private final AuthenticationManager authenticationManager;
+    private final MemberRepository memberRepository;
 
     /**
      * 회원가입
@@ -100,17 +103,29 @@ public class AuthService {
      * 로그인 (사용자 정보 포함)
      */
     public Map<String, String> loginWithUserInfo(String username, String password) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(username, password)
-        );
-
+        // 사용자 존재 여부 확인
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 계정입니다."));
 
-        // admin 계정은 이메일 인증 우회 (테스트 및 관리자 계정)
-        // 미인증 계정은 존재하지 않는 계정으로 처리하여 보안 강화 및 UX 개선
+        // 비밀번호 확인
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new RuntimeException("비밀번호가 일치하지 않습니다.");
+        }
+
+        // 이메일 인증 확인 (admin 계정 제외)
         if (!user.getEmailVerified() && !username.equals("admin")) {
-            throw new RuntimeException("사용자명 또는 비밀번호가 잘못되었습니다.");
+            throw new RuntimeException("이메일 인증이 완료되지 않은 계정입니다. 이메일을 확인해주세요.");
+        }
+
+        // Member 테이블에서 삭제된 계정 확인 (admin 계정 제외)
+        if (!username.equals("admin")) {
+            boolean memberExists = memberRepository.findByEmail(user.getEmail()).isPresent();
+            if (!memberExists) {
+                // Member가 삭제된 경우, User도 삭제하고 오류 반환
+                log.warn("Member 삭제된 계정으로 로그인 시도: {}, User 계정도 삭제 처리", username);
+                userRepository.delete(user);
+                throw new RuntimeException("존재하지 않는 계정입니다.");
+            }
         }
 
         String token = jwtService.generateToken(user);
@@ -118,6 +133,7 @@ public class AuthService {
         Map<String, String> result = new HashMap<>();
         result.put("token", token);
         result.put("username", user.getUsername());
+        result.put("name", user.getName()); // 실명 추가
         result.put("role", user.getRole().toString());
         
         return result;

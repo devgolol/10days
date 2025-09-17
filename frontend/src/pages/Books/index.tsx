@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   Table,
   Button,
@@ -24,6 +24,7 @@ import {
 } from '@ant-design/icons';
 import { bookService } from '../../services/bookService';
 import { formatDate, getErrorMessage } from '../../utils';
+import { AuthContext } from '../../App';
 
 // 로컬 타입 정의
 interface Book {
@@ -52,12 +53,20 @@ const { Title } = Typography;
 const { Search } = Input;
 
 const BookList: React.FC = () => {
+  const authContext = useContext(AuthContext);
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [form] = Form.useForm();
+
+  // AuthContext가 없으면 렌더링하지 않음
+  if (!authContext) {
+    return null;
+  }
+
+  const { role } = authContext;
 
   useEffect(() => {
     loadBooks();
@@ -223,31 +232,35 @@ const BookList: React.FC = () => {
       key: 'action',
       width: 120,
       render: (_, record: Book) => (
-        <Space size="small">
-          <Button
-            type="link"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-          >
-            수정
-          </Button>
-          <Popconfirm
-            title="정말 삭제하시겠습니까?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="삭제"
-            cancelText="취소"
-          >
+        role === 'ADMIN' ? (
+          <Space size="small">
             <Button
               type="link"
               size="small"
-              danger
-              icon={<DeleteOutlined />}
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
             >
-              삭제
+              수정
             </Button>
-          </Popconfirm>
-        </Space>
+            <Popconfirm
+              title="정말 삭제하시겠습니까?"
+              onConfirm={() => handleDelete(record.id)}
+              okText="삭제"
+              cancelText="취소"
+            >
+              <Button
+                type="link"
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+              >
+                삭제
+              </Button>
+            </Popconfirm>
+          </Space>
+        ) : (
+          <span style={{ color: '#666' }}>조회 전용</span>
+        )
       ),
     },
   ];
@@ -256,9 +269,11 @@ const BookList: React.FC = () => {
     <div>
       <div className="page-header">
         <Title level={2}>도서 관리</Title>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-          도서 추가
-        </Button>
+        {role === 'ADMIN' && (
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+            도서 추가
+          </Button>
+        )}
       </div>
 
       <Card>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   Table,
   Button,
@@ -17,6 +17,7 @@ import {
   DatePicker,
   Tooltip,
   Divider,
+  AutoComplete,
 } from 'antd';
 import {
   PlusOutlined,
@@ -33,6 +34,7 @@ import {
 import dayjs from 'dayjs';
 import { loanService, bookService, memberService } from '../../services';
 import { formatDate, getErrorMessage } from '../../utils';
+import { AuthContext } from '../../App';
 
 // 타입 정의 (임시)
 interface Book {
@@ -84,6 +86,7 @@ const { Search } = Input;
 const { Option } = Select;
 
 const LoanList: React.FC = () => {
+  const authContext = useContext(AuthContext);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [books, setBooks] = useState<Book[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -95,11 +98,22 @@ const LoanList: React.FC = () => {
   const [returningLoan, setReturningLoan] = useState<Loan | null>(null);
   const [form] = Form.useForm();
   const [returnForm] = Form.useForm();
+  const [bookSearchOptions, setBookSearchOptions] = useState<any[]>([]);
+  const [memberSearchOptions, setMemberSearchOptions] = useState<any[]>([]);
+
+  // AuthContext가 없으면 렌더링하지 않음
+  if (!authContext) {
+    return null;
+  }
+
+  const { role } = authContext;
 
   useEffect(() => {
+    // 모든 권한에서 대출 데이터 로딩 가능
     loadLoans();
+    // 도서와 회원 데이터는 모든 권한에서 로딩 (대출등록 기능을 위해)
     loadBooksAndMembers();
-  }, []);
+  }, [role]);
 
   const loadLoans = async () => {
     try {
@@ -150,6 +164,8 @@ const LoanList: React.FC = () => {
   const handleAdd = () => {
     setEditingLoan(null);
     form.resetFields();
+    setBookSearchOptions([]);
+    setMemberSearchOptions([]);
     const today = dayjs();
     form.setFieldsValue({
       loanDate: today,
@@ -189,14 +205,86 @@ const LoanList: React.FC = () => {
     return 0;
   };
 
-  const handleModalOk = async () => {
+  // 도서 검색 함수
+  const onBookSearch = (value: string) => {
+    if (!value) {
+      setBookSearchOptions([]);
+      return;
+    }
+    
+    const filteredBooks = books
+      .filter(book => 
+        book.availableCopies > 0 && (
+          book.title.toLowerCase().includes(value.toLowerCase()) ||
+          book.author.toLowerCase().includes(value.toLowerCase()) ||
+          book.isbn.includes(value)
+        )
+      )
+      .map(book => ({
+        value: book.title, // ID 대신 책 제목을 value로 사용
+        label: (
+          <div>
+            <div style={{ fontWeight: 'bold' }}>{book.title}</div>
+            <div style={{ fontSize: '12px', color: '#666' }}>
+              {book.author} | 재고: {book.availableCopies}권
+            </div>
+          </div>
+        ),
+        book: book
+      }));
+    
+    setBookSearchOptions(filteredBooks);
+  };
+
+  // 회원 검색 함수
+  const onMemberSearch = (value: string) => {
+    if (!value) {
+      setMemberSearchOptions([]);
+      return;
+    }
+    
+    const filteredMembers = members
+      .filter(member => 
+        member.status === 'ACTIVE' && (
+          member.name.toLowerCase().includes(value.toLowerCase()) ||
+          member.memberNumber.includes(value) ||
+          member.email.toLowerCase().includes(value.toLowerCase())
+        )
+      )
+      .map(member => ({
+        value: member.name, // ID 대신 회원 이름을 value로 사용
+        label: (
+          <div>
+            <div style={{ fontWeight: 'bold' }}>{member.name}</div>
+            <div style={{ fontSize: '12px', color: '#666' }}>
+              {member.memberNumber} | {member.email}
+            </div>
+          </div>
+        ),
+        member: member
+      }));
+    
+    setMemberSearchOptions(filteredMembers);
+  };
+
+  const handleModalOk = async (e?: React.MouseEvent) => {
+    e?.preventDefault(); // 기본 동작 방지
+    e?.stopPropagation(); // 이벤트 전파 방지
+    
     try {
       const values = await form.validateFields();
-      
-      const bookId = values.bookId;
-      const memberId = values.memberId;
-      const selectedBook = books.find(b => b.id === bookId);
-      const selectedMember = members.find(m => m.id === memberId);
+      await handleFormSubmit(values);
+    } catch (error) {
+      // validation 에러는 이미 form에서 처리됨
+      console.error('Form validation error:', error);
+    }
+  };
+
+  const handleFormSubmit = async (values: any) => {
+    try {
+      // 선택된 책 제목과 회원 이름으로 실제 객체를 찾기
+      const selectedBook = books.find(book => book.title === values.bookId);
+      const selectedMember = members.find(member => member.name === values.memberId);
       
       if (!selectedBook || !selectedMember) {
         message.error('도서 또는 회원 정보를 찾을 수 없습니다.');
@@ -215,10 +303,10 @@ const LoanList: React.FC = () => {
         return;
       }
 
-      // 실제 API 호출
+      // 실제 API 호출 (ID 사용)
       const loanData = {
-        bookId: values.bookId,
-        memberId: values.memberId,
+        bookId: selectedBook.id,
+        memberId: selectedMember.id,
         loanDate: values.loanDate.format('YYYY-MM-DD'),
         dueDate: values.dueDate.format('YYYY-MM-DD')
       };
@@ -230,10 +318,9 @@ const LoanList: React.FC = () => {
       
       setIsModalVisible(false);
       form.resetFields();
+      setBookSearchOptions([]);
+      setMemberSearchOptions([]);
     } catch (error) {
-      if (error.errorFields) {
-        return;
-      }
       message.error(getErrorMessage(error));
     }
   };
@@ -413,7 +500,7 @@ const LoanList: React.FC = () => {
     {
       title: '액션',
       key: 'action',
-      width: 150,
+      width: 100,
       render: (_, record: Loan) => (
         <Space size="small">
           {record.status === 'ACTIVE' && (
@@ -426,21 +513,6 @@ const LoanList: React.FC = () => {
               반납
             </Button>
           )}
-          <Popconfirm
-            title="정말 삭제하시겠습니까?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="삭제"
-            cancelText="취소"
-          >
-            <Button
-              type="link"
-              size="small"
-              danger
-              icon={<DeleteOutlined />}
-            >
-              삭제
-            </Button>
-          </Popconfirm>
         </Space>
       ),
     },
@@ -488,38 +560,54 @@ const LoanList: React.FC = () => {
       <Modal
         title="대출 등록"
         open={isModalVisible}
-        onOk={handleModalOk}
         onCancel={() => {
           setIsModalVisible(false);
           form.resetFields();
+          setBookSearchOptions([]);
+          setMemberSearchOptions([]);
         }}
         width={600}
-        okText="대출 등록"
-        cancelText="취소"
+        footer={[
+          <Button key="cancel" onClick={() => {
+            setIsModalVisible(false);
+            form.resetFields();
+            setBookSearchOptions([]);
+            setMemberSearchOptions([]);
+          }}>
+            취소
+          </Button>,
+          <Button 
+            key="submit" 
+            type="primary" 
+            onClick={handleModalOk}
+            htmlType="button"
+          >
+            대출 등록
+          </Button>,
+        ]}
       >
         <Form
           form={form}
           layout="vertical"
           style={{ marginTop: 16 }}
+          onFinish={handleFormSubmit}
         >
           <Form.Item
             name="bookId"
             label="도서"
             rules={[{ required: true, message: '도서를 선택해주세요' }]}
           >
-            <Select
-              placeholder="도서를 선택하세요"
-              showSearch
-              filterOption={(input, option) =>
-                option?.children?.toString().toLowerCase().includes(input.toLowerCase())
-              }
-            >
-              {books.filter(book => book.availableCopies > 0).map(book => (
-                <Option key={book.id} value={book.id}>
-                  {book.title} - {book.author} (재고: {book.availableCopies}권)
-                </Option>
-              ))}
-            </Select>
+            <AutoComplete
+              placeholder="도서명, 저자명, ISBN으로 검색하세요"
+              onSearch={onBookSearch}
+              onChange={(value) => {
+                form.setFieldsValue({ bookId: value });
+              }}
+              options={bookSearchOptions}
+              style={{ width: '100%' }}
+              filterOption={false}
+              notFoundContent={books.length === 0 ? '도서 목록을 불러오는 중...' : '검색 결과가 없습니다'}
+            />
           </Form.Item>
 
           <Form.Item
@@ -527,19 +615,17 @@ const LoanList: React.FC = () => {
             label="회원"
             rules={[{ required: true, message: '회원을 선택해주세요' }]}
           >
-            <Select
-              placeholder="회원을 선택하세요"
-              showSearch
-              filterOption={(input, option) =>
-                option?.children?.toString().toLowerCase().includes(input.toLowerCase())
-              }
-            >
-              {members.filter(member => member.status === 'ACTIVE').map(member => (
-                <Option key={member.id} value={member.id}>
-                  {member.name} ({member.memberNumber})
-                </Option>
-              ))}
-            </Select>
+            <AutoComplete
+              placeholder="회원명, 회원번호, 이메일로 검색하세요"
+              onSearch={onMemberSearch}
+              onChange={(value) => {
+                form.setFieldsValue({ memberId: value });
+              }}
+              options={memberSearchOptions}
+              style={{ width: '100%' }}
+              filterOption={false}
+              notFoundContent={members.length === 0 ? '회원 목록을 불러오는 중...' : '검색 결과가 없습니다'}
+            />
           </Form.Item>
 
           <Row gutter={16}>

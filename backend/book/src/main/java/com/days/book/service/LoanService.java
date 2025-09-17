@@ -71,6 +71,9 @@ public class LoanService {
 
         // 반납 처리 (Loan 엔티티의 메서드 사용)
         loan.returnBook();
+        
+        // Book 엔티티의 availableCopies 변경사항 저장
+        bookService.updateBook(loan.getBook());
 
         return loanRepository.save(loan);
     }
@@ -109,6 +112,14 @@ public class LoanService {
     public Loan getLoan(Long id) {
         return loanRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("대출 정보를 찾을 수 없습니다. ID: " + id));
+    }
+
+    /**
+     * 전체 대출 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public List<Loan> getAllLoans() {
+        return loanRepository.findAll();
     }
 
     /**
@@ -324,6 +335,35 @@ public class LoanService {
                 .toList();
         } catch (Exception e) {
             return List.of(); // 빈 리스트 반환
+        }
+    }
+
+    /**
+     * 대출 삭제
+     * 반납 완료된 대출 기록만 삭제 가능
+     */
+    public void deleteLoan(Long loanId) {
+        Loan loan = loanRepository.findById(loanId)
+                .orElseThrow(() -> new RuntimeException("대출 기록을 찾을 수 없습니다."));
+        
+        // 반납되지 않은 대출은 삭제 불가
+        if (loan.getStatus() == Loan.LoanStatus.ACTIVE) {
+            throw new RuntimeException("대출 중인 기록은 삭제할 수 없습니다. 먼저 반납 처리를 해주세요.");
+        }
+        
+        if (loan.getStatus() == Loan.LoanStatus.OVERDUE) {
+            throw new RuntimeException("연체된 대출 기록은 삭제할 수 없습니다. 먼저 반납 처리를 해주세요.");
+        }
+        
+        if (loan.getStatus() == Loan.LoanStatus.LOST) {
+            throw new RuntimeException("분실 처리된 대출 기록은 삭제할 수 없습니다.");
+        }
+        
+        // 반납 완료된 기록만 삭제 가능
+        if (loan.getStatus() == Loan.LoanStatus.RETURNED) {
+            loanRepository.delete(loan);
+        } else {
+            throw new RuntimeException("반납 완료된 대출 기록만 삭제할 수 있습니다.");
         }
     }
 

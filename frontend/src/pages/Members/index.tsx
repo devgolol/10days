@@ -237,9 +237,9 @@ const MemberList: React.FC = () => {
     {
       title: '액션',
       key: 'action',
-      width: 120,
+      width: 150,
       render: (_, record: Member) => (
-        <Space size="small">
+        <Space size="middle">
           <Button
             type="link"
             size="small"

@@ -10,7 +10,8 @@ import {
   Row,
   Col,
   Modal,
-  Divider 
+  Divider,
+  Alert 
 } from 'antd';
 import { 
   UserOutlined, 
@@ -32,6 +33,7 @@ interface LoginRequest {
 
 const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const [findEmailModal, setFindEmailModal] = useState(false);
   const [resetPasswordModal, setResetPasswordModal] = useState(false);
   const [findEmailLoading, setFindEmailLoading] = useState(false);
@@ -50,6 +52,7 @@ const Login: React.FC = () => {
 
   const handleLogin = async (values: LoginRequest) => {
     setLoading(true);
+    setErrorMessage(''); // 이전 오류 메시지 초기화
     
     try {
       const response = await fetch('http://localhost:8080/api/auth/login', {
@@ -64,18 +67,16 @@ const Login: React.FC = () => {
       
       if (response.ok) {
         // AuthContext의 login 함수를 사용하여 상태 업데이트
-        login(data.token, data.username, data.role);
-        
-        message.success('로그인에 성공했습니다!');
+        login(data.token, data.username, data.role, data.name || data.username);
         
         // 대시보드로 리다이렉트
         navigate('/dashboard');
       } else {
-        message.error(data.error || '로그인에 실패했습니다.');
+        setErrorMessage(data.error || '로그인에 실패했습니다.');
       }
     } catch (error) {
       console.error('Login error:', error);
-      message.error('네트워크 오류가 발생했습니다.');
+      setErrorMessage('네트워크 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -158,7 +159,7 @@ const Login: React.FC = () => {
               borderRadius: '12px',
               border: 'none'
             }}
-            bodyStyle={{ padding: '40px' }}
+            styles={{ body: { padding: '40px' } }}
           >
             <Space direction="vertical" size="large" style={{ width: '100%', textAlign: 'center' }}>
               {/* 로고 및 제목 */}
@@ -227,6 +228,20 @@ const Login: React.FC = () => {
                     {loading ? '로그인 중...' : '로그인'}
                   </Button>
                 </Form.Item>
+
+                {/* 오류 메시지 표시 */}
+                {errorMessage && (
+                  <Form.Item style={{ marginBottom: '16px' }}>
+                    <Alert
+                      message={errorMessage}
+                      type="error"
+                      showIcon
+                      style={{ borderRadius: '8px' }}
+                      closable
+                      onClose={() => setErrorMessage('')}
+                    />
+                  </Form.Item>
+                )}
 
                 {/* 아이디/비밀번호 찾기 및 회원가입 링크 */}
                 <div style={{ textAlign: 'center', marginTop: '16px' }}>

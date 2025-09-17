@@ -49,10 +49,10 @@ public class MemberController {
     }
 
     /**
-     * 전체 회원 조회 (관리자만)
+     * 전체 회원 조회 (관리자 및 사용자 - 대출등록용)
      */
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<List<Member>> getAllMembers() {
         List<Member> members = memberService.getAllMembers();
         return ResponseEntity.ok(members);
@@ -119,9 +119,24 @@ public class MemberController {
      * 회원 삭제 (탈퇴 처리)
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteMember(@PathVariable Long id) {
         try {
             memberService.deleteMember(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * 회원 강제 삭제 (대출 기록과 함께 삭제)
+     */
+    @DeleteMapping("/{id}/force")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> forceDeleteMember(@PathVariable Long id) {
+        try {
+            memberService.forceDeleteMember(id);
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
             return ResponseEntity.notFound().build();

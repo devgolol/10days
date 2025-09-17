@@ -11,13 +11,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.days.book.entity.Loan;
 import com.days.book.entity.Loan.LoanStatus;
 import com.days.book.service.LoanService;
+import com.days.book.dto.LoanCreateRequest;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
 
@@ -32,13 +35,23 @@ public class LoanController {
     private final LoanService loanService;
 
     /**
-     * 도서 대출 (관리자만)
+     * 전체 대출 조회 (관리자 및 사용자)
+     */
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    public ResponseEntity<List<Loan>> getAllLoans() {
+        List<Loan> loans = loanService.getAllLoans();
+        return ResponseEntity.ok(loans);
+    }
+
+    /**
+     * 도서 대출 (관리자 및 사용자)
      */
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Loan> createLoan(@RequestParam Long bookId, @RequestParam Long memberId) {
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    public ResponseEntity<Loan> createLoan(@RequestBody LoanCreateRequest request) {
         try {
-            Loan loan = loanService.createLoan(bookId, memberId);
+            Loan loan = loanService.createLoan(request.getBookId(), request.getMemberId());
             return ResponseEntity.status(HttpStatus.CREATED).body(loan);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
@@ -46,10 +59,10 @@ public class LoanController {
     }
 
     /**
-     * 도서 반납 (관리자만)
+     * 도서 반납 (관리자 및 사용자)
      */
     @PutMapping("/{loanId}/return")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<Loan> returnBook(@PathVariable Long loanId) {
         try {
             Loan loan = loanService.returnBook(loanId);
@@ -62,10 +75,10 @@ public class LoanController {
     }
 
     /**
-     * 대출 연장 (관리자만)
+     * 대출 연장 (관리자 및 사용자)
      */
     @PutMapping("/{loanId}/extend")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<Loan> extendLoan(@PathVariable Long loanId) {
         try {
             Loan loan = loanService.extendLoan(loanId);
@@ -222,5 +235,19 @@ public class LoanController {
     public ResponseEntity<LoanService.LoanStatistics> getLoanStatistics() {
         LoanService.LoanStatistics statistics = loanService.getLoanStatistics();
         return ResponseEntity.ok(statistics);
+    }
+
+    /**
+     * 대출 삭제 (관리자만)
+     */
+    @DeleteMapping("/{loanId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteLoan(@PathVariable Long loanId) {
+        try {
+            loanService.deleteLoan(loanId);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

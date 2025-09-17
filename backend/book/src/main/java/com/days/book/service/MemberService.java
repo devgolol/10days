@@ -9,6 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.days.book.entity.Member;
 import com.days.book.entity.Member.MemberStatus;
 import com.days.book.repository.MemberRepository;
+import com.days.book.repository.LoanRepository;
+import com.days.book.repository.UserRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,8 @@ import lombok.RequiredArgsConstructor;
 public class MemberService {
 
     private final MemberRepository memberRepository;
+    private final LoanRepository loanRepository;
+    private final UserRepository userRepository;
 
     /**
      * 회원 등록
@@ -102,12 +106,62 @@ public class MemberService {
     }
 
     /**
-     * 회원 삭제 (실제로는 탈퇴 처리)
+     * 회원 삭제 (실제 DB에서 삭제 - User도 함께 삭제)
      */
     public void deleteMember(Long id) {
         Member member = getMember(id);
-        member.withdraw();
-        memberRepository.save(member);
+        
+        // 대출 기록이 있는지 확인
+        if (loanRepository.existsByMember(member)) {
+            throw new RuntimeException("대출 기록이 있는 회원은 삭제할 수 없습니다. 먼저 모든 대출을 처리해주세요.");
+        }
+        
+        try {
+            // 해당 이메일로 등록된 User 계정도 함께 삭제
+            userRepository.findByEmail(member.getEmail()).ifPresent(user -> {
+                userRepository.delete(user);
+            });
+            
+            // Member 삭제
+            memberRepository.delete(member);
+            
+        } catch (Exception e) {
+            // 예외 발생 시 로그 출력 및 다시 시도
+            System.out.println("회원 삭제 중 오류 발생: " + e.getMessage());
+            
+            // User를 username으로도 시도
+            try {
+                userRepository.findByUsername(member.getName()).ifPresent(user -> {
+                    userRepository.delete(user);
+                });
+            } catch (Exception ex) {
+                System.out.println("Username으로 User 삭제 시도 실패: " + ex.getMessage());
+            }
+            
+            // Member 삭제는 재시도
+            memberRepository.delete(member);
+            throw new RuntimeException("회원 삭제가 완료되었지만 일부 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 회원 강제 삭제 (대출 기록과 함께 삭제 - User도 함께 삭제)
+     */
+    public void forceDeleteMember(Long id) {
+        Member member = getMember(id);
+        
+        // 대출 기록이 있으면 먼저 삭제
+        if (loanRepository.existsByMember(member)) {
+            loanRepository.deleteByMember(member);
+        }
+        
+        // 해당 이메일로 등록된 User 계정도 함께 삭제
+        userRepository.findByEmail(member.getEmail()).ifPresent(user -> {
+            userRepository.delete(user);
+        });
+        
+        // Member 삭제
+        memberRepository.delete(member);
     }
 
     /**

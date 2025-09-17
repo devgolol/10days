@@ -60,7 +60,7 @@ export const loanService = {
 
   // 도서 반납
   returnBook: (id: number) => 
-    apiClient.patch<ApiResponse<Loan>>(`/loans/${id}/return`),
+    apiClient.put<ApiResponse<Loan>>(`/loans/${id}/return`),
 
   // 대출 연장
   extend: (id: number, days: number = 14) => 
@@ -69,6 +69,10 @@ export const loanService = {
   // 분실 처리
   markAsLost: (id: number) => 
     apiClient.patch<ApiResponse<Loan>>(`/loans/${id}/lost`),
+
+  // 대출 삭제
+  delete: (id: number) => 
+    apiClient.delete<ApiResponse<void>>(`/loans/${id}`),
 
   // 페이지네이션으로 대출 조회
   getPage: (page: number = 0, size: number = 10) => 

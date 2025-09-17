@@ -61,6 +61,12 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
     @Query("SELECT COALESCE(SUM(l.overdueFee), 0) FROM Loan l WHERE l.member = :member")
     Integer getTotalOverdueFeeByMember(@Param("member") Member member);
     
+    // 회원의 대출 기록 존재 여부 확인 (삭제 전 체크용)
+    boolean existsByMember(Member member);
+    
+    // 회원의 모든 대출 기록 삭제 (강제 삭제용)
+    void deleteByMember(Member member);
+    
     // 오늘까지 연체된 대출 자동 조회 (배치용)
     @Query("SELECT l FROM Loan l WHERE l.status = 'ACTIVE' AND l.dueDate < :today")
     List<Loan> findOverdueLoans(@Param("today") LocalDate today);
@@ -69,7 +75,7 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
     @Query("SELECT l FROM Loan l WHERE l.member = :member AND l.status = 'ACTIVE'")
     List<Loan> findActiveLoansByMember(@Param("member") Member member);
     
-    // 최근 대출 조회 (대출일 기준 최신순)
-    @Query(value = "SELECT * FROM loans ORDER BY loan_date DESC LIMIT :limit", nativeQuery = true)
+    // 최근 대출 조회 (대출일 기준 최신순, 회원이 존재하는 경우만)
+    @Query(value = "SELECT l.* FROM loans l INNER JOIN members m ON l.member_id = m.id ORDER BY l.loan_date DESC LIMIT :limit", nativeQuery = true)
     List<Loan> findRecentLoans(@Param("limit") int limit);
 }

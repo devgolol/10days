@@ -42,11 +42,22 @@ const Dashboard: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // 사용자 역할에 따라 다른 API 호출
+      // 모든 사용자가 개인 통계를 보도록 변경 (관리자도 개인 대출 목록 표시)
       if (authContext?.role === 'ADMIN') {
-        // 관리자: 전체 통계
-        const response = await dashboardService.getStats();
-        setData(response.data.data);
+        // 관리자: 전체 통계 + 개인 대출 목록
+        const [statsResponse, myStatsResponse] = await Promise.all([
+          dashboardService.getStats(),
+          dashboardService.getMyStats()
+        ]);
+        
+        // 전체 통계는 유지하되, 대출 목록은 개인 것으로 교체
+        const statsData = statsResponse.data.data;
+        const myStatsData = myStatsResponse.data.data;
+        
+        setData({
+          ...statsData,
+          recentLoans: myStatsData.recentLoans || [] // 개인 대출 목록으로 교체
+        });
       } else {
         // 일반 사용자: 개인 통계
         const response = await dashboardService.getMyStats();
@@ -231,7 +242,7 @@ const Dashboard: React.FC = () => {
       )}
 
       {/* 최근 대출 목록 */}
-      <Card title={authContext?.role === 'ADMIN' ? "최근 대출 목록" : "나의 최근 대출 목록"} style={{ marginBottom: 24 }}>
+      <Card title="나의 최근 대출 목록" style={{ marginBottom: 24 }}>
         <Table
           columns={recentLoansColumns}
           dataSource={data.recentLoans}

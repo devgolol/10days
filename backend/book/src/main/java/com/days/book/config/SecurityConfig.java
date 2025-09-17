@@ -54,6 +54,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/loans/**").permitAll() // 대출 API 임시 허용
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             );
@@ -70,6 +71,8 @@ public class SecurityConfig {
         configuration.addAllowedOrigin("http://localhost:5173");
         configuration.addAllowedOrigin("http://localhost:5174");
         configuration.addAllowedOrigin("http://localhost:5175");
+        configuration.addAllowedOrigin("http://localhost:5179");
+        configuration.addAllowedOrigin("http://localhost:5180"); // 현재 프론트엔드 포트 추가
         configuration.addAllowedMethod("*");
         configuration.addAllowedHeader("*");
         configuration.setAllowCredentials(true);
