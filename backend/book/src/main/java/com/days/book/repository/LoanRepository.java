@@ -3,6 +3,7 @@ package com.days.book.repository;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -76,6 +77,6 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
     List<Loan> findActiveLoansByMember(@Param("member") Member member);
     
     // 최근 대출 조회 (대출일 기준 최신순, 회원이 존재하는 경우만)
-    @Query(value = "SELECT l.* FROM loans l INNER JOIN members m ON l.member_id = m.id ORDER BY l.loan_date DESC LIMIT :limit", nativeQuery = true)
-    List<Loan> findRecentLoans(@Param("limit") int limit);
+    @Query("SELECT l FROM Loan l JOIN l.member m ORDER BY l.loanDate DESC")
+    List<Loan> findRecentLoans(Pageable pageable);
 }

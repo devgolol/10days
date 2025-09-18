@@ -111,6 +111,11 @@ public class MemberService {
     public void deleteMember(Long id) {
         Member member = getMember(id);
         
+        // admin 계정 삭제 방지 (admin2는 삭제 가능)
+        if ("관리자".equals(member.getName()) || "admin@library.com".equals(member.getEmail())) {
+            throw new RuntimeException("관리자 계정은 삭제할 수 없습니다.");
+        }
+        
         // 대출 기록이 있는지 확인
         if (loanRepository.existsByMember(member)) {
             throw new RuntimeException("대출 기록이 있는 회원은 삭제할 수 없습니다. 먼저 모든 대출을 처리해주세요.");

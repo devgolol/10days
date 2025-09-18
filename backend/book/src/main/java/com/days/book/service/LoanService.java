@@ -3,6 +3,8 @@ package com.days.book.service;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -233,7 +235,8 @@ public class LoanService {
 
     @Transactional(readOnly = true)
     public List<Loan> getRecentLoans(int limit) {
-        return loanRepository.findRecentLoans(limit);
+        Pageable pageable = PageRequest.of(0, limit);
+        return loanRepository.findRecentLoans(pageable);
     }
 
     /**

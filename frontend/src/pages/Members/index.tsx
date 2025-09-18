@@ -94,11 +94,12 @@ const MemberList: React.FC = () => {
     }
   };
 
-  const handleAdd = () => {
-    setEditingMember(null);
-    form.resetFields();
-    setIsModalVisible(true);
-  };
+  // 회원 추가 기능 제거됨 - handleAdd 함수 비활성화
+  // const handleAdd = () => {
+  //   setEditingMember(null);
+  //   form.resetFields();
+  //   setIsModalVisible(true);
+  // };
 
   const handleEdit = (member: Member) => {
     setEditingMember(member);
@@ -128,7 +129,7 @@ const MemberList: React.FC = () => {
       const values = await form.validateFields();
       
       if (editingMember) {
-        // 수정
+        // 수정만 가능 (추가 기능 제거됨)
         const response = await memberService.update(editingMember.id, values);
         const updatedMember = response.data;
         const updatedMembers = members.map(member =>
@@ -137,11 +138,9 @@ const MemberList: React.FC = () => {
         setMembers(updatedMembers);
         message.success('회원 정보가 수정되었습니다.');
       } else {
-        // 추가
-        const response = await memberService.create(values);
-        const newMember = response.data;
-        setMembers([...members, newMember]);
-        message.success('회원이 추가되었습니다.');
+        // 회원 추가 기능이 제거되었으므로 이 케이스는 발생하지 않음
+        message.error('회원 추가 기능은 비활성화되었습니다.');
+        return;
       }
       
       setIsModalVisible(false);
@@ -248,21 +247,34 @@ const MemberList: React.FC = () => {
           >
             수정
           </Button>
-          <Popconfirm
-            title="정말 삭제하시겠습니까?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="삭제"
-            cancelText="취소"
-          >
+          {/* admin 계정(관리자)은 삭제 불가, admin2는 삭제 가능 */}
+          {record.name !== '관리자' && record.email !== 'admin@library.com' ? (
+            <Popconfirm
+              title="정말 삭제하시겠습니까?"
+              onConfirm={() => handleDelete(record.id)}
+              okText="삭제"
+              cancelText="취소"
+            >
+              <Button
+                type="link"
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+              >
+                삭제
+              </Button>
+            </Popconfirm>
+          ) : (
             <Button
               type="link"
               size="small"
-              danger
+              disabled
               icon={<DeleteOutlined />}
+              title="관리자 계정은 삭제할 수 없습니다"
             >
               삭제
             </Button>
-          </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -272,9 +284,7 @@ const MemberList: React.FC = () => {
     <div>
       <div className="page-header">
         <Title level={2}>회원 관리</Title>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-          회원 추가
-        </Button>
+        {/* 회원 추가 기능 제거됨 - 수정 및 삭제만 가능 */}
       </div>
 
       <Card>
@@ -307,7 +317,7 @@ const MemberList: React.FC = () => {
       </Card>
 
       <Modal
-        title={editingMember ? '회원 정보 수정' : '회원 추가'}
+        title={editingMember ? '회원 정보 수정' : '회원 수정'} // 추가 기능 제거됨
         open={isModalVisible}
         onOk={handleModalOk}
         onCancel={() => {
@@ -315,7 +325,7 @@ const MemberList: React.FC = () => {
           form.resetFields();
         }}
         width={600}
-        okText={editingMember ? '수정' : '추가'}
+        okText={editingMember ? '수정' : '수정'} // 항상 수정만 가능
         cancelText="취소"
       >
         <Form
@@ -323,15 +333,17 @@ const MemberList: React.FC = () => {
           layout="vertical"
           style={{ marginTop: 16 }}
         >
+          {/* 회원 추가 기능이 제거되어 이 메시지는 항상 표시되지 않음 */}
           {!editingMember && (
             <div style={{ 
-              background: '#f0f2f5', 
+              background: '#fff2e8', 
               padding: '12px', 
               borderRadius: '6px', 
               marginBottom: '16px',
-              color: '#666'
+              color: '#d46b08',
+              border: '1px solid #ffbb96'
             }}>
-              📋 회원번호는 서버에서 자동으로 생성됩니다.
+              ⚠️ 회원 추가 기능이 비활성화되었습니다. 수정만 가능합니다.
             </div>
           )}
 
