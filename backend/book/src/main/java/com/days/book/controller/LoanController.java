@@ -63,7 +63,7 @@ public class LoanController {
      */
     @PutMapping("/{loanId}/return")
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
-    public ResponseEntity<Loan> returnBook(@PathVariable Long loanId) {
+    public ResponseEntity<Loan> returnBook(@PathVariable("loanId") Long loanId) {
         try {
             Loan loan = loanService.returnBook(loanId);
             return ResponseEntity.ok(loan);
@@ -79,7 +79,7 @@ public class LoanController {
      */
     @PutMapping("/{loanId}/extend")
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
-    public ResponseEntity<Loan> extendLoan(@PathVariable Long loanId) {
+    public ResponseEntity<Loan> extendLoan(@PathVariable("loanId") Long loanId) {
         try {
             Loan loan = loanService.extendLoan(loanId);
             return ResponseEntity.ok(loan);
@@ -94,7 +94,7 @@ public class LoanController {
      * 분실 처리
      */
     @PutMapping("/{loanId}/lost")
-    public ResponseEntity<Loan> markAsLost(@PathVariable Long loanId, @RequestParam(required = false) String reason) {
+    public ResponseEntity<Loan> markAsLost(@PathVariable("loanId") Long loanId, @RequestParam(required = false) String reason) {
         try {
             Loan loan = loanService.markAsLost(loanId, reason);
             return ResponseEntity.ok(loan);
@@ -107,7 +107,7 @@ public class LoanController {
      * 특정 대출 조회
      */
     @GetMapping("/{loanId}")
-    public ResponseEntity<Loan> getLoan(@PathVariable Long loanId) {
+    public ResponseEntity<Loan> getLoan(@PathVariable("loanId") Long loanId) {
         try {
             Loan loan = loanService.getLoan(loanId);
             return ResponseEntity.ok(loan);
@@ -120,7 +120,7 @@ public class LoanController {
      * 회원별 활성 대출 조회
      */
     @GetMapping("/member/{memberId}/active")
-    public ResponseEntity<List<Loan>> getActiveLoansByMember(@PathVariable Long memberId) {
+    public ResponseEntity<List<Loan>> getActiveLoansByMember(@PathVariable("memberId") Long memberId) {
         try {
             List<Loan> loans = loanService.getActiveLoansByMember(memberId);
             return ResponseEntity.ok(loans);
@@ -133,7 +133,7 @@ public class LoanController {
      * 회원별 대출 이력 조회
      */
     @GetMapping("/member/{memberId}/history")
-    public ResponseEntity<List<Loan>> getLoanHistoryByMember(@PathVariable Long memberId) {
+    public ResponseEntity<List<Loan>> getLoanHistoryByMember(@PathVariable("memberId") Long memberId) {
         try {
             List<Loan> loans = loanService.getLoanHistoryByMember(memberId);
             return ResponseEntity.ok(loans);
@@ -146,7 +146,7 @@ public class LoanController {
      * 도서별 대출 이력 조회
      */
     @GetMapping("/book/{bookId}/history")
-    public ResponseEntity<List<Loan>> getLoanHistoryByBook(@PathVariable Long bookId) {
+    public ResponseEntity<List<Loan>> getLoanHistoryByBook(@PathVariable("bookId") Long bookId) {
         try {
             List<Loan> loans = loanService.getLoanHistoryByBook(bookId);
             return ResponseEntity.ok(loans);
@@ -177,7 +177,7 @@ public class LoanController {
      * 상태별 대출 조회
      */
     @GetMapping("/status/{status}")
-    public ResponseEntity<List<Loan>> getLoansByStatus(@PathVariable LoanStatus status) {
+    public ResponseEntity<List<Loan>> getLoansByStatus(@PathVariable("status") LoanStatus status) {
         List<Loan> loans = loanService.getLoansByStatus(status);
         return ResponseEntity.ok(loans);
     }
@@ -197,7 +197,7 @@ public class LoanController {
      * 회원의 연체료 총액 조회
      */
     @GetMapping("/member/{memberId}/overdue-fee")
-    public ResponseEntity<Integer> getTotalOverdueFeeByMember(@PathVariable Long memberId) {
+    public ResponseEntity<Integer> getTotalOverdueFeeByMember(@PathVariable("memberId") Long memberId) {
         try {
             Integer totalFee = loanService.getTotalOverdueFeeByMember(memberId);
             return ResponseEntity.ok(totalFee);
@@ -219,7 +219,7 @@ public class LoanController {
      * 회원의 현재 대출 수 조회
      */
     @GetMapping("/member/{memberId}/count")
-    public ResponseEntity<Long> getCurrentLoanCountByMember(@PathVariable Long memberId) {
+    public ResponseEntity<Long> getCurrentLoanCountByMember(@PathVariable("memberId") Long memberId) {
         try {
             Long count = loanService.getCurrentLoanCountByMember(memberId);
             return ResponseEntity.ok(count);
@@ -242,7 +242,7 @@ public class LoanController {
      */
     @DeleteMapping("/{loanId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteLoan(@PathVariable Long loanId) {
+    public ResponseEntity<Void> deleteLoan(@PathVariable("loanId") Long loanId) {
         try {
             loanService.deleteLoan(loanId);
             return ResponseEntity.noContent().build();

@@ -63,7 +63,7 @@ public class MemberController {
      */
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Member> getMember(@PathVariable Long id) {
+    public ResponseEntity<Member> getMember(@PathVariable("id") Long id) {
         try {
             Member member = memberService.getMember(id);
             return ResponseEntity.ok(member);
@@ -77,7 +77,7 @@ public class MemberController {
      */
     @GetMapping("/member-number/{memberNumber}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Member> getMemberByMemberNumber(@PathVariable String memberNumber) {
+    public ResponseEntity<Member> getMemberByMemberNumber(@PathVariable("memberNumber") String memberNumber) {
         try {
             Member member = memberService.getMemberByMemberNumber(memberNumber);
             return ResponseEntity.ok(member);
@@ -103,7 +103,7 @@ public class MemberController {
      * 회원 정보 수정
      */
     @PutMapping("/{id}")
-    public ResponseEntity<Member> updateMember(@PathVariable Long id, @Valid @RequestBody Member member) {
+    public ResponseEntity<Member> updateMember(@PathVariable("id") Long id, @Valid @RequestBody Member member) {
         try {
             member.setId(id);
             Member updatedMember = memberService.updateMember(member);

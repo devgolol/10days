@@ -42,7 +42,7 @@ public class BookController {
     //특정 도서 조회 (모든 인증된 사용자)
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
-    public ResponseEntity<Book> getBook(@PathVariable Long id) {
+    public ResponseEntity<Book> getBook(@PathVariable("id") Long id) {
         try{
             Book book = bookService.getBook(id);
             return ResponseEntity.ok(book);
@@ -66,7 +66,7 @@ public class BookController {
     //도서 정보 수정 (관리자만)
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Book> updateBook(@PathVariable Long id, @Valid @RequestBody Book book) {
+    public ResponseEntity<Book> updateBook(@PathVariable("id") Long id, @Valid @RequestBody Book book) {
         try {
             Book updateBook = bookService.updateBook(id,book);
             return ResponseEntity.ok(updateBook);
@@ -78,7 +78,7 @@ public class BookController {
     //도서 삭제 (관리자만)
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteBook(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteBook(@PathVariable("id") Long id) {
         try {
             bookService.deleteBook(id);
             return ResponseEntity.noContent().build();
