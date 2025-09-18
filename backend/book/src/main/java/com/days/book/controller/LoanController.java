@@ -250,4 +250,18 @@ public class LoanController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    /**
+     * 잘못된 외래키를 가진 대출 기록 정리 (관리자만)
+     */
+    @DeleteMapping("/cleanup-invalid")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> cleanupInvalidLoans() {
+        try {
+            int deletedCount = loanService.cleanupInvalidLoans();
+            return ResponseEntity.ok("정리된 잘못된 대출 기록: " + deletedCount + "건");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("정리 중 오류 발생: " + e.getMessage());
+        }
+    }
 }

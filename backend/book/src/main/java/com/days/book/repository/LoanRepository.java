@@ -77,6 +77,10 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
     List<Loan> findActiveLoansByMember(@Param("member") Member member);
     
     // 최근 대출 조회 (대출일 기준 최신순, 회원이 존재하는 경우만)
-    @Query("SELECT l FROM Loan l JOIN l.member m ORDER BY l.loanDate DESC")
+    @Query("SELECT l FROM Loan l JOIN FETCH l.book JOIN FETCH l.member ORDER BY l.loanDate DESC")
     List<Loan> findRecentLoans(Pageable pageable);
+    
+    // 모든 대출 조회 (Book과 Member 정보 포함, 삭제된 엔티티도 포함)
+    @Query("SELECT l FROM Loan l LEFT JOIN FETCH l.book LEFT JOIN FETCH l.member ORDER BY l.id DESC")
+    List<Loan> findAllWithBookAndMember();
 }

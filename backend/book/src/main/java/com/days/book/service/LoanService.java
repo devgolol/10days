@@ -1,6 +1,7 @@
 package com.days.book.service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.data.domain.PageRequest;
@@ -121,7 +122,7 @@ public class LoanService {
      */
     @Transactional(readOnly = true)
     public List<Loan> getAllLoans() {
-        return loanRepository.findAll();
+        return loanRepository.findAllWithBookAndMember();
     }
 
     /**
@@ -368,6 +369,53 @@ public class LoanService {
         } else {
             throw new RuntimeException("반납 완료된 대출 기록만 삭제할 수 있습니다.");
         }
+    }
+
+    /**
+     * 잘못된 외래키를 가진 대출 기록 정리
+     * book_id나 member_id가 null이거나 존재하지 않는 대출 기록을 삭제
+     */
+    @Transactional
+    public int cleanupInvalidLoans() {
+        List<Loan> allLoans = loanRepository.findAll();
+        List<Loan> invalidLoans = new ArrayList<>();
+        
+        for (Loan loan : allLoans) {
+            boolean isInvalid = false;
+            
+            // book이 null이거나 book_id가 존재하지 않는 경우
+            if (loan.getBook() == null) {
+                isInvalid = true;
+            } else {
+                try {
+                    bookService.getBook(loan.getBook().getId());
+                } catch (Exception e) {
+                    isInvalid = true;
+                }
+            }
+            
+            // member가 null이거나 member_id가 존재하지 않는 경우
+            if (loan.getMember() == null) {
+                isInvalid = true;
+            } else {
+                try {
+                    memberService.getMember(loan.getMember().getId());
+                } catch (Exception e) {
+                    isInvalid = true;
+                }
+            }
+            
+            if (isInvalid) {
+                invalidLoans.add(loan);
+            }
+        }
+        
+        // 잘못된 대출 기록 삭제
+        if (!invalidLoans.isEmpty()) {
+            loanRepository.deleteAll(invalidLoans);
+        }
+        
+        return invalidLoans.size();
     }
 
     /**
