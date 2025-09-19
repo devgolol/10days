@@ -5,9 +5,11 @@ import java.util.List;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.days.book.entity.Book;
 import com.days.book.entity.Loan;
@@ -90,4 +92,10 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
     // 모든 대출 조회 (Book과 Member 정보 포함, 삭제된 엔티티도 포함)
     @Query("SELECT l FROM Loan l LEFT JOIN FETCH l.book LEFT JOIN FETCH l.member ORDER BY l.id DESC")
     List<Loan> findAllWithBookAndMember();
+    
+    // 책 삭제 시 관련 대출 기록의 book_id를 NULL로 설정
+    @Modifying
+    @Transactional
+    @Query("UPDATE Loan l SET l.book = null WHERE l.book.id = :bookId")
+    void updateBookToNullByBookId(@Param("bookId") Long bookId);
 }
