@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.days.book.entity.Book;
 import com.days.book.repository.BookRepository;
+import com.days.book.repository.LoanRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -18,6 +19,9 @@ public class BookService {
 
     @Autowired
     private BookRepository bookRepository;
+    
+    @Autowired
+    private LoanRepository loanRepository;
 
     //도서등록
     public Book saveBook(Book book) {
@@ -139,17 +143,23 @@ public class BookService {
         Book book = bookRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 도서입니다: " +id));
 
-        // 대출 중인 도서 삭제 불가 검증
+        // 현재 대출 중인 도서 삭제 불가 검증
         int loanedCopies = book.getTotalCopies() - book.getAvailableCopies();
         if (loanedCopies > 0) {
             throw new IllegalStateException("현재 " + loanedCopies + "권이 대출 중이므로 도서를 삭제할 수 없습니다. 모든 도서가 반납된 후 삭제해주세요.");
+        }
+
+        // 과거 대출 기록 존재 여부 확인
+        boolean hasLoanHistory = !loanRepository.findByBookOrderByLoanDateDesc(book).isEmpty();
+        if (hasLoanHistory) {
+            throw new IllegalStateException("이 도서에 대출 기록이 존재하므로 삭제할 수 없습니다. 도서 데이터의 무결성을 위해 대출 기록이 있는 도서는 삭제가 제한됩니다.");
         }
 
         try {
             bookRepository.deleteById(id);
         } catch (Exception e) {
             // Foreign Key 제약 조건 등 데이터베이스 오류 처리
-            throw new IllegalStateException("도서를 삭제할 수 없습니다. 대출 기록이 존재하거나 다른 제약 조건이 있습니다: " + e.getMessage());
+            throw new IllegalStateException("도서를 삭제할 수 없습니다. 시스템 오류가 발생했습니다: " + e.getMessage());
         }
     }
 

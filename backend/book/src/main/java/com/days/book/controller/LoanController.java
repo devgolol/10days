@@ -2,6 +2,8 @@ package com.days.book.controller;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
+import java.util.ArrayList;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -21,7 +23,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.days.book.entity.Loan;
 import com.days.book.entity.Loan.LoanStatus;
+import com.days.book.entity.Member;
 import com.days.book.service.LoanService;
+import com.days.book.service.MemberService;
 import com.days.book.dto.LoanCreateRequest;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -35,6 +39,7 @@ import lombok.RequiredArgsConstructor;
 public class LoanController {
 
     private final LoanService loanService;
+    private final MemberService memberService;
 
     /**
      * 전체 대출 조회 (관리자 및 사용자)
@@ -246,18 +251,19 @@ public class LoanController {
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<List<Loan>> getMyLoans(Authentication authentication) {
         try {
-            User user = (User) authentication.getPrincipal();
-            Long userId = user.getId();
+            // 인증된 사용자의 이메일 가져오기
+            String userEmail = authentication.getName();
             
-            // userId로 Member 찾기
-            Optional<Member> memberOptional = memberService.findMemberByUserId(userId);
-            if (memberOptional.isEmpty()) {
+            // 이메일로 Member 찾기
+            try {
+                Member member = memberService.getMemberByEmail(userEmail);
+                Long memberId = member.getId();
+                List<Loan> loans = loanService.getLoanHistoryByMember(memberId);
+                return ResponseEntity.ok(loans);
+            } catch (Exception e) {
+                // Member가 존재하지 않는 경우 빈 목록 반환
                 return ResponseEntity.ok(new ArrayList<>());
             }
-            
-            Long memberId = memberOptional.get().getId();
-            List<Loan> loans = loanService.getLoanHistoryByMember(memberId);
-            return ResponseEntity.ok(loans);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }

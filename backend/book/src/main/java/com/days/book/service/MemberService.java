@@ -318,7 +318,7 @@ public class MemberService {
         String userEmail = userOptional.get().getEmail();
         
         // Member 테이블에서 같은 이메일로 Member 조회
-        Member member = memberRepository.findByEmail(userEmail);
+        Member member = memberRepository.findByEmail(userEmail).orElse(null);
         return java.util.Optional.ofNullable(member);
     }
 }
