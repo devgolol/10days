@@ -27,6 +27,7 @@ import com.days.book.entity.Member;
 import com.days.book.service.LoanService;
 import com.days.book.service.MemberService;
 import com.days.book.dto.LoanCreateRequest;
+import com.days.book.dto.LoanResponseDTO;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
 
@@ -48,6 +49,16 @@ public class LoanController {
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<List<Loan>> getAllLoans() {
         List<Loan> loans = loanService.getAllLoans();
+        return ResponseEntity.ok(loans);
+    }
+    
+    /**
+     * 전체 대출 조회 - DTO 방식 (프록시 문제 해결)
+     */
+    @GetMapping("/dto")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    public ResponseEntity<List<LoanResponseDTO>> getAllLoansDTO() {
+        List<LoanResponseDTO> loans = loanService.getAllLoansAsDTO();
         return ResponseEntity.ok(loans);
     }
 

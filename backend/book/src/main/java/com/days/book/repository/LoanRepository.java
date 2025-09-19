@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -15,6 +16,7 @@ import com.days.book.entity.Book;
 import com.days.book.entity.Loan;
 import com.days.book.entity.Loan.LoanStatus;
 import com.days.book.entity.Member;
+import com.days.book.dto.LoanResponseDTO;
 
 @Repository
 public interface LoanRepository extends JpaRepository<Loan, Long> {
@@ -89,17 +91,34 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
     @Query("SELECT l FROM Loan l ORDER BY l.loanDate DESC")
     List<Loan> findRecentLoans(Pageable pageable);
     
-    // 최근 대출 조회 (JOIN FETCH 버전, Pageable 없음)
-    @Query("SELECT l FROM Loan l LEFT JOIN FETCH l.book LEFT JOIN FETCH l.member ORDER BY l.loanDate DESC")
+    // 최근 대출 조회 (JOIN FETCH 버전, Pageable 없음) - DISTINCT 추가
+    @Query("SELECT DISTINCT l FROM Loan l LEFT JOIN FETCH l.book LEFT JOIN FETCH l.member ORDER BY l.loanDate DESC")
     List<Loan> findRecentLoansWithDetails();
     
-    // 모든 대출 조회 (Book과 Member 정보 포함, 삭제된 엔티티도 포함)
-    @Query("SELECT l FROM Loan l LEFT JOIN FETCH l.book LEFT JOIN FETCH l.member ORDER BY l.id DESC")
-    List<Loan> findAllWithBookAndMember();
+    // 모든 대출 조회 (@EntityGraph 사용 - 더 안정적)
+    @EntityGraph(attributePaths = {"book", "member"})
+    @Query("SELECT l FROM Loan l ORDER BY l.id DESC")
+    List<Loan> findAllWithBookAndMemberGraph();
+    
+    // 백업 방법: 단순 쿼리 (N+1 문제 있지만 확실함)
+    @Query("SELECT l FROM Loan l ORDER BY l.id DESC")
+    List<Loan> findAllLoansSimple();
     
     // 책 삭제 시 관련 대출 기록의 book_id를 NULL로 설정 (기록 보존하되 참조 해제)
     @Modifying
     @Transactional
     @Query("UPDATE Loan l SET l.book = null WHERE l.book.id = :bookId")
     void updateBookToNullByBookId(@Param("bookId") Long bookId);
+    
+    // DTO 방식으로 모든 대출 조회 (프록시 문제 해결)
+    @Query("SELECT new com.days.book.dto.LoanResponseDTO(" +
+           "l.id, l.loanDate, l.dueDate, l.returnDate, l.status, l.overdueFee, l.notes, l.createdAt, l.updatedAt, " +
+           "b.id, b.title, b.author, b.isbn, b.category, " +
+           "m.id, m.name, m.email, m.memberNumber, " +
+           "0L, false) " +
+           "FROM Loan l " +
+           "LEFT JOIN l.book b " +
+           "LEFT JOIN l.member m " +
+           "ORDER BY l.id DESC")
+    List<LoanResponseDTO> findAllLoansAsDTO();
 }

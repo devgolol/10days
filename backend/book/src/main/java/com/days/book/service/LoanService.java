@@ -18,6 +18,7 @@ import com.days.book.entity.Member.MemberStatus;
 import com.days.book.entity.User;
 import com.days.book.repository.LoanRepository;
 import com.days.book.repository.UserRepository;
+import com.days.book.dto.LoanResponseDTO;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.Builder;
@@ -119,11 +120,36 @@ public class LoanService {
     }
 
     /**
-     * 전체 대출 목록 조회
+     * 전체 대출 목록 조회 (@EntityGraph 사용)
      */
     @Transactional(readOnly = true)
     public List<Loan> getAllLoans() {
-        return loanRepository.findAllWithBookAndMember();
+        return loanRepository.findAllWithBookAndMemberGraph();
+    }
+    
+    /**
+     * 전체 대출 목록 조회 (DTO 방식 - 프록시 문제 해결)
+     */
+    @Transactional(readOnly = true)
+    public List<LoanResponseDTO> getAllLoansAsDTO() {
+        List<LoanResponseDTO> loans = loanRepository.findAllLoansAsDTO();
+        
+        // 연체 정보 계산 (DTO에서는 직접 계산 필요)
+        for (LoanResponseDTO loan : loans) {
+            if (loan.getDueDate() != null) {
+                LocalDate checkDate = loan.getReturnDate() != null ? loan.getReturnDate() : LocalDate.now();
+                if (checkDate.isAfter(loan.getDueDate())) {
+                    long overdueDays = java.time.temporal.ChronoUnit.DAYS.between(loan.getDueDate(), checkDate);
+                    loan.setOverdueDays(overdueDays);
+                    loan.setOverdue(true);
+                } else {
+                    loan.setOverdueDays(0L);
+                    loan.setOverdue(false);
+                }
+            }
+        }
+        
+        return loans;
     }
 
     /**
