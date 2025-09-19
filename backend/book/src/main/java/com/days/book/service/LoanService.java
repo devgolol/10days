@@ -263,9 +263,11 @@ public class LoanService {
 
     @Transactional(readOnly = true)
     public List<Loan> getRecentLoans(int limit) {
-        // JOIN FETCH 버전으로 변경 (상위 N개만 가져오기)
-        List<Loan> allLoans = loanRepository.findRecentLoansWithDetails();
-        return allLoans.stream().limit(limit).collect(Collectors.toList());
+        // 더 안정적인 @EntityGraph 방식 사용
+        List<Loan> allLoans = loanRepository.findAllWithBookAndMemberGraph();
+        return allLoans.stream()
+            .limit(limit)
+            .collect(Collectors.toList());
     }
 
     /**

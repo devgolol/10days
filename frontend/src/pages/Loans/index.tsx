@@ -135,10 +135,17 @@ const LoanList: React.FC = () => {
         response = await loanService.getMyLoans();
       }
       
-      setLoans(response.data);
+      // API 응답 구조 확인 및 처리
+      const loanData = response.data?.data || response.data || [];
+      console.log('API 응답:', response.data); // 디버깅용
+      console.log('처리된 대출 데이터:', loanData); // 디버깅용
+      
+      setLoans(Array.isArray(loanData) ? loanData : []);
       setLoading(false);
     } catch (error) {
+      console.error('대출 데이터 로딩 실패:', error);
       message.error(getErrorMessage(error));
+      setLoans([]); // 에러 시 빈 배열로 초기화
       setLoading(false);
     }
   };
@@ -687,8 +694,8 @@ const LoanList: React.FC = () => {
         {returningLoan && (
           <div>
             <div style={{ background: '#f0f2f5', padding: '16px', borderRadius: '6px', marginBottom: '16px' }}>
-              <div><strong>도서:</strong> {returningLoan.book.title}</div>
-              <div><strong>회원:</strong> {returningLoan.member.name}</div>
+              <div><strong>도서:</strong> {returningLoan.book?.title || '삭제된 도서'}</div>
+              <div><strong>회원:</strong> {returningLoan.member?.name || '삭제된 회원'}</div>
               <div><strong>대출일:</strong> {formatDate(returningLoan.loanDate)}</div>
               <div><strong>반납예정일:</strong> {formatDate(returningLoan.dueDate)}</div>
               {isOverdue(returningLoan) && (

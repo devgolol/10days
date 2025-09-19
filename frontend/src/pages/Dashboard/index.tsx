@@ -42,6 +42,8 @@ const Dashboard: React.FC = () => {
       setLoading(true);
       setError(null);
       
+      console.log('대시보드 데이터 로딩 시작...'); // 디버깅용
+      
       // 모든 사용자가 개인 통계를 보도록 변경 (관리자도 개인 대출 목록 표시)
       if (authContext?.role === 'ADMIN') {
         // 관리자: 전체 통계 + 개인 대출 목록
@@ -50,22 +52,39 @@ const Dashboard: React.FC = () => {
           dashboardService.getMyStats()
         ]);
         
+        console.log('관리자 통계 응답:', statsResponse.data); // 디버깅용
+        console.log('관리자 개인 통계 응답:', myStatsResponse.data); // 디버깅용
+        
         // 전체 통계는 유지하되, 대출 목록은 개인 것으로 교체
-        const statsData = statsResponse.data.data;
-        const myStatsData = myStatsResponse.data.data;
+        const statsData = statsResponse.data?.data || statsResponse.data || {};
+        const myStatsData = myStatsResponse.data?.data || myStatsResponse.data || {};
         
         setData({
-          ...statsData,
+          totalBooks: statsData.totalBooks || 0,
+          totalMembers: statsData.totalMembers || 0,
+          activeLoans: statsData.activeLoans || 0,
+          overdueLoans: statsData.overdueLoans || 0,
           recentLoans: myStatsData.recentLoans || [] // 개인 대출 목록으로 교체
         });
       } else {
         // 일반 사용자: 개인 통계
         const response = await dashboardService.getMyStats();
-        setData(response.data.data);
+        console.log('사용자 개인 통계 응답:', response.data); // 디버깅용
+        
+        const myStatsData = response.data?.data || response.data || {};
+        setData({
+          activeLoans: 0,
+          overdueLoans: 0,
+          myActiveLoans: myStatsData.myActiveLoans || 0,
+          myOverdueLoans: myStatsData.myOverdueLoans || 0,
+          myTotalLoans: myStatsData.myTotalLoans || 0,
+          recentLoans: myStatsData.recentLoans || []
+        });
       }
       
       setLoading(false);
     } catch (err) {
+      console.error('대시보드 데이터 로딩 실패:', err);
       setError(getErrorMessage(err));
       setLoading(false);
     }

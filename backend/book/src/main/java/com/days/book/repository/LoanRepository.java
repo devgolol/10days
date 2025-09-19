@@ -110,11 +110,11 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
     @Query("UPDATE Loan l SET l.book = null WHERE l.book.id = :bookId")
     void updateBookToNullByBookId(@Param("bookId") Long bookId);
     
-    // DTO 방식으로 모든 대출 조회 (프록시 문제 해결)
+    // DTO 방식으로 모든 대출 조회 (프록시 문제 해결) - NULL 처리 개선
     @Query("SELECT new com.days.book.dto.LoanResponseDTO(" +
            "l.id, l.loanDate, l.dueDate, l.returnDate, l.status, l.overdueFee, l.notes, l.createdAt, l.updatedAt, " +
-           "b.id, b.title, b.author, b.isbn, b.category, " +
-           "m.id, m.name, m.email, m.memberNumber, " +
+           "COALESCE(b.id, 0L), COALESCE(b.title, '삭제된 도서'), COALESCE(b.author, 'N/A'), COALESCE(b.isbn, 'N/A'), COALESCE(b.category, 'N/A'), " +
+           "COALESCE(m.id, 0L), COALESCE(m.name, '삭제된 회원'), COALESCE(m.email, 'N/A'), COALESCE(m.memberNumber, 'N/A'), " +
            "0L, false) " +
            "FROM Loan l " +
            "LEFT JOIN l.book b " +

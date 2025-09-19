@@ -46,9 +46,9 @@ interface LoanCreateRequest {
 }
 
 export const loanService = {
-  // 모든 대출 조회
+  // 모든 대출 조회 - DTO 버전 사용 (프록시 문제 해결)
   getAll: () => 
-    apiClient.get<ApiResponse<Loan[]>>('/loans'),
+    apiClient.get<ApiResponse<Loan[]>>('/loans/dto'),
 
   // 대출 상세 조회
   getById: (id: number) => 
