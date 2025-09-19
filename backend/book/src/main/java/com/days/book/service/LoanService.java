@@ -3,6 +3,7 @@ package com.days.book.service;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -236,8 +237,9 @@ public class LoanService {
 
     @Transactional(readOnly = true)
     public List<Loan> getRecentLoans(int limit) {
-        Pageable pageable = PageRequest.of(0, limit);
-        return loanRepository.findRecentLoans(pageable);
+        // JOIN FETCH 버전으로 변경 (상위 N개만 가져오기)
+        List<Loan> allLoans = loanRepository.findRecentLoansWithDetails();
+        return allLoans.stream().limit(limit).collect(Collectors.toList());
     }
 
     /**

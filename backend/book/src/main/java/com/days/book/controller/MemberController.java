@@ -120,7 +120,7 @@ public class MemberController {
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteMember(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteMember(@PathVariable("id") Long id) {
         try {
             memberService.deleteMember(id);
             return ResponseEntity.noContent().build();
@@ -134,7 +134,7 @@ public class MemberController {
      */
     @DeleteMapping("/{id}/force")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> forceDeleteMember(@PathVariable Long id) {
+    public ResponseEntity<Void> forceDeleteMember(@PathVariable("id") Long id) {
         try {
             memberService.forceDeleteMember(id);
             return ResponseEntity.noContent().build();
