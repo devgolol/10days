@@ -65,6 +65,13 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
     // 회원의 대출 기록 존재 여부 확인 (삭제 전 체크용)
     boolean existsByMember(Member member);
     
+    // 도서의 대출 기록 존재 여부 확인 (삭제 전 체크용)
+    boolean existsByBook(Book book);
+    
+    // 도서 ID로 대출 기록 존재 여부 확인 (삭제 전 체크용)
+    @Query("SELECT CASE WHEN COUNT(l) > 0 THEN true ELSE false END FROM Loan l WHERE l.book.id = :bookId")
+    boolean existsByBookId(@Param("bookId") Long bookId);
+    
     // 회원의 모든 대출 기록 삭제 (강제 삭제용)
     void deleteByMember(Member member);
     

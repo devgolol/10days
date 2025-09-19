@@ -79,12 +79,40 @@ export const isValidISBN = (isbn: string): boolean => {
 
 // 에러 메시지 추출
 export const getErrorMessage = (error: any): string => {
-  if (error.response?.data?.message) {
-    return error.response.data.message;
+  // axios 응답 에러의 경우
+  if (error.response) {
+    // 서버에서 직접 문자열로 응답하는 경우 (우리의 경우)
+    if (typeof error.response.data === 'string') {
+      return error.response.data;
+    }
+    // JSON 응답의 경우
+    if (error.response.data?.message) {
+      return error.response.data.message;
+    }
+    // 상태 코드별 기본 메시지
+    switch (error.response.status) {
+      case 400:
+        return '잘못된 요청입니다.';
+      case 401:
+        return '인증이 필요합니다.';
+      case 403:
+        return '권한이 없습니다.';
+      case 404:
+        return '요청한 리소스를 찾을 수 없습니다.';
+      case 409:
+        return '요청이 현재 리소스 상태와 충돌합니다.';
+      case 500:
+        return '서버 내부 오류가 발생했습니다.';
+      default:
+        return `오류가 발생했습니다. (상태 코드: ${error.response.status})`;
+    }
   }
+  
+  // 네트워크 오류 등
   if (error.message) {
     return error.message;
   }
+  
   return '알 수 없는 오류가 발생했습니다.';
 };
 

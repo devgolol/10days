@@ -54,12 +54,10 @@ public class Book {
     private LocalDate publishedDate;
 
     @Column(name = "total_copies", nullable = false)
-    @Builder.Default
-    private Integer totalCopies = 1;
+    private Integer totalCopies;
 
-    @Column(name = "available_copies", nullable = false)
-    @Builder.Default
-    private Integer availableCopies = 1;
+    @Column(name = "available_copies", nullable = false) 
+    private Integer availableCopies;
 
     @Column(columnDefinition = "TEXT")
     private String description;

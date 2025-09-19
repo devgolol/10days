@@ -29,6 +29,17 @@ public class BookService {
         if (book.getIsbn() != null && bookRepository.findByIsbn(book.getIsbn()).isPresent()) {
             throw new IllegalArgumentException("이미 등록된 ISBN입니다:" + book.getIsbn());
         }
+        
+        // 새 책 등록 시 대출 가능 권수를 총 권수와 동일하게 설정
+        if (book.getTotalCopies() != null && book.getAvailableCopies() == null) {
+            book.setAvailableCopies(book.getTotalCopies());
+        }
+        
+        // 기본값 설정 (null인 경우)
+        if (book.getTotalCopies() == null) {
+            book.setTotalCopies(1);
+            book.setAvailableCopies(1);
+        }
 
         return bookRepository.save(book);
     }
@@ -149,16 +160,15 @@ public class BookService {
             throw new IllegalStateException("현재 " + loanedCopies + "권이 대출 중이므로 도서를 삭제할 수 없습니다. 모든 도서가 반납된 후 삭제해주세요.");
         }
 
-        // 과거 대출 기록 존재 여부 확인
-        boolean hasLoanHistory = !loanRepository.findByBookOrderByLoanDateDesc(book).isEmpty();
-        if (hasLoanHistory) {
-            throw new IllegalStateException("이 도서에 대출 기록이 존재하므로 삭제할 수 없습니다. 도서 데이터의 무결성을 위해 대출 기록이 있는 도서는 삭제가 제한됩니다.");
-        }
-
         try {
             bookRepository.deleteById(id);
         } catch (Exception e) {
-            // Foreign Key 제약 조건 등 데이터베이스 오류 처리
+            // 외래키 제약조건으로 인한 삭제 실패 시 명확한 메시지 제공
+            if (e.getMessage().contains("foreign key") || e.getMessage().contains("constraint")) {
+                throw new IllegalStateException("이 도서는 과거 대출 기록이 있어 삭제할 수 없습니다. " +
+                    "대출 기록을 보존하기 위해 도서 정보는 유지됩니다. " +
+                    "필요시 관리자에게 문의하세요.");
+            }
             throw new IllegalStateException("도서를 삭제할 수 없습니다. 시스템 오류가 발생했습니다: " + e.getMessage());
         }
     }
