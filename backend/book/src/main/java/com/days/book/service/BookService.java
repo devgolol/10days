@@ -161,14 +161,12 @@ public class BookService {
         }
 
         try {
+            // 관련된 과거 대출 기록의 book_id를 NULL로 설정 (연관 관계 해제)
+            loanRepository.updateBookToNullByBookId(id);
+            
+            // 이제 안전하게 도서 삭제
             bookRepository.deleteById(id);
         } catch (Exception e) {
-            // 외래키 제약조건으로 인한 삭제 실패 시 명확한 메시지 제공
-            if (e.getMessage().contains("foreign key") || e.getMessage().contains("constraint")) {
-                throw new IllegalStateException("이 도서는 과거 대출 기록이 있어 삭제할 수 없습니다. " +
-                    "대출 기록을 보존하기 위해 도서 정보는 유지됩니다. " +
-                    "필요시 관리자에게 문의하세요.");
-            }
             throw new IllegalStateException("도서를 삭제할 수 없습니다. 시스템 오류가 발생했습니다: " + e.getMessage());
         }
     }
