@@ -303,4 +303,22 @@ public class MemberService {
     public long getActiveMemberCount() {
         return memberRepository.findByStatus(MemberStatus.ACTIVE).size();
     }
+    
+    /**
+     * User ID로 Member 조회
+     */
+    @Transactional(readOnly = true)
+    public java.util.Optional<Member> findMemberByUserId(Long userId) {
+        // User 테이블에서 해당 사용자의 이메일 조회
+        var userOptional = userRepository.findById(userId);
+        if (userOptional.isEmpty()) {
+            return java.util.Optional.empty();
+        }
+        
+        String userEmail = userOptional.get().getEmail();
+        
+        // Member 테이블에서 같은 이메일로 Member 조회
+        Member member = memberRepository.findByEmail(userEmail);
+        return java.util.Optional.ofNullable(member);
+    }
 }

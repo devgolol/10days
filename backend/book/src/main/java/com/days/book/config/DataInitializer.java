@@ -68,43 +68,48 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void createMemberForExistingUsers() {
-        // 기존 사용자들을 위한 Member 생성 로직 비활성화
-        // 유미 회원 자동 생성 제거 - 삭제 후 재생성 방지
-        /*
-        // yuumi5654 사용자를 위한 Member 생성
-        if (!memberRepository.existsByEmail("yuumi5654@gmail.com")) {
-            Member yuumiMember = Member.builder()
-                    .memberNumber("M2025010")
-                    .name("유미")
-                    .email("yuumi5654@gmail.com")
-                    .phone("010-5654-5654")
-                    .address("서울시 강남구")
-                    .status(Member.MemberStatus.ACTIVE)
-                    .joinDate(LocalDate.now())
-                    .maxLoanCount(5)
-                    .build();
-            
-            memberRepository.save(yuumiMember);
-            log.info("Member created for yuumi5654@gmail.com");
+        // 모든 기존 사용자들을 위한 Member 자동 생성
+        log.info("기존 사용자들을 위한 Member 동기화 시작...");
+        
+        // 모든 USERS 조회
+        List<User> allUsers = userRepository.findAll();
+        
+        for (User user : allUsers) {
+            // 해당 이메일로 Member가 없으면 생성
+            if (!memberRepository.existsByEmail(user.getEmail())) {
+                try {
+                    // Member 번호 자동 생성 (현재 시간 기반으로 유니크하게)
+                    long timestamp = System.currentTimeMillis() % 100000; // 마지막 5자리
+                    String memberNumber = String.format("M%d%05d", 
+                        LocalDate.now().getYear(), timestamp);
+                    
+                    Member newMember = Member.builder()
+                            .memberNumber(memberNumber)
+                            .name(user.getName() != null ? user.getName() : user.getUsername())
+                            .email(user.getEmail())
+                            .phone(user.getPhone() != null ? user.getPhone() : "010-0000-0000")
+                            .address(user.getAddress() != null ? user.getAddress() : "주소 미입력")
+                            .status(Member.MemberStatus.ACTIVE)
+                            .joinDate(LocalDate.now())
+                            .maxLoanCount(user.getRole() == Role.ADMIN ? 10 : 5)
+                            .build();
+                    
+                    memberRepository.save(newMember);
+                    log.info("Member 자동 생성: {} -> {}", user.getUsername(), user.getEmail());
+                    
+                    // 중복 방지를 위한 짧은 대기
+                    Thread.sleep(1);
+                    
+                } catch (Exception e) {
+                    log.warn("Member 생성 실패 (무시하고 계속): {} - {}", user.getEmail(), e.getMessage());
+                }
+            } else {
+                log.info("Member 이미 존재: {}", user.getEmail());
+            }
         }
-        */
-
-        // admin 사용자를 위한 Member 생성  
-        if (!memberRepository.existsByEmail("admin@library.com")) {
-            Member adminMember = Member.builder()
-                    .memberNumber("M2025011")
-                    .name("관리자")
-                    .email("admin@library.com")
-                    .phone("010-0000-0000")
-                    .address("도서관 사무실")
-                    .status(Member.MemberStatus.ACTIVE)
-                    .joinDate(LocalDate.now())
-                    .maxLoanCount(10)
-                    .build();
-            
-            memberRepository.save(adminMember);
-            log.info("Member created for admin@library.com");
-        }
+        
+        log.info("Member 동기화 완료. 총 사용자 수: {}, 총 Member 수: {}", 
+            userRepository.count(), memberRepository.count());
     }
 
     private void createSampleMembers() {

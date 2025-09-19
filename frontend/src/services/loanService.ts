@@ -108,4 +108,26 @@ export const loanService = {
       lostBooks: number;
       totalOverdueFees: number;
     }>>('/loans/statistics'),
+
+  // 대출 검색
+  search: (query: string) =>
+    apiClient.get<ApiResponse<Loan[]>>(`/loans/search?q=${encodeURIComponent(query)}`),
+
+  // 내 대출 조회 (현재 사용자)
+  getMyLoans: () =>
+    apiClient.get<ApiResponse<Loan[]>>('/loans/my'),
+
+  // 내 대출 검색 (현재 사용자)
+  searchMyLoans: (query: string) =>
+    apiClient.get<ApiResponse<Loan[]>>(`/loans/my/search?q=${encodeURIComponent(query)}`),
+
+  // 내 대출 통계 (현재 사용자)
+  getMyStatistics: () =>
+    apiClient.get<ApiResponse<{
+      totalLoans: number;
+      activeLoans: number;
+      overdueLoans: number;
+      returnedLoans: number;
+      totalOverdueFees: number;
+    }>>('/loans/my/statistics'),
 };

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modal Test</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/antd/5.12.0/reset.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/antd/5.12.0/antd.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script>
+        const { useState } = React;
+        const { Button, Modal } = antd;
+        
+        function ModalTest() {
+            const [visible, setVisible] = useState(false);
+            
+            const showModal = () => {
+                console.log('Button clicked!');
+                Modal.confirm({
+                    title: '테스트 모달',
+                    content: '모달이 나타났습니까?',
+                    okText: '예',
+                    cancelText: '아니오',
+                    getContainer: () => document.body,
+                    zIndex: 10000,
+                    onOk() {
+                        console.log('OK clicked');
+                    },
+                    onCancel() {
+                        console.log('Cancel clicked');
+                    },
+                });
+            };
+            
+            return React.createElement('div', {
+                style: { padding: '50px', textAlign: 'center' }
+            }, [
+                React.createElement('h1', { key: 'title' }, '모달 테스트'),
+                React.createElement(Button, {
+                    key: 'button',
+                    type: 'primary',
+                    onClick: showModal,
+                    style: { fontSize: '18px', padding: '10px 20px' }
+                }, '모달 열기'),
+            ]);
+        }
+        
+        ReactDOM.render(React.createElement(ModalTest), document.getElementById('root'));
+    </script>
+</body>
+</html>

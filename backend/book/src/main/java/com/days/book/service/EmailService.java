@@ -102,10 +102,27 @@ public class EmailService {
     }
     
     /**
-     * 이메일 인증 발송 (sendEmailVerification 별칭)
+     * 회원가입 이메일 인증 발송
      */
     public void sendEmailVerification(String email, String token, String username) {
-        sendUsernameVerificationEmail(email, token);
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(email);
+            message.setSubject("[도서관리시스템] 회원가입 이메일 인증");
+            message.setText("안녕하세요 " + username + "님,\n\n" +
+                    "회원가입을 완료하기 위해 이메일 인증이 필요합니다.\n\n" +
+                    "인증코드: " + token + "\n\n" +
+                    "본 인증코드는 5분간 유효합니다.\n\n" +
+                    "회원가입을 완료하려면 인증코드를 입력해주세요.\n\n" +
+                    "감사합니다.");
+            message.setFrom("noreply@library.com");
+            
+            mailSender.send(message);
+            log.info("회원가입 이메일 인증 발송 성공: {}", email);
+        } catch (Exception e) {
+            log.error("회원가입 이메일 인증 발송 실패: {} - {}", email, e.getMessage());
+            throw new RuntimeException("이메일 발송에 실패했습니다.", e);
+        }
     }
     
     /**

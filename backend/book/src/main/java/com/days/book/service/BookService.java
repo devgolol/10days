@@ -139,11 +139,18 @@ public class BookService {
         Book book = bookRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 도서입니다: " +id));
 
-        if (book.getAvailableCopies() < book.getTotalCopies()) {
-            throw new IllegalStateException("현재 대출 중인 도서는 삭제할 수 없습니다.");
+        // 대출 중인 도서 삭제 불가 검증
+        int loanedCopies = book.getTotalCopies() - book.getAvailableCopies();
+        if (loanedCopies > 0) {
+            throw new IllegalStateException("현재 " + loanedCopies + "권이 대출 중이므로 도서를 삭제할 수 없습니다. 모든 도서가 반납된 후 삭제해주세요.");
         }
 
-        bookRepository.deleteById(id);
+        try {
+            bookRepository.deleteById(id);
+        } catch (Exception e) {
+            // Foreign Key 제약 조건 등 데이터베이스 오류 처리
+            throw new IllegalStateException("도서를 삭제할 수 없습니다. 대출 기록이 존재하거나 다른 제약 조건이 있습니다: " + e.getMessage());
+        }
     }
 
     public List<Book> findPopularBooks() {

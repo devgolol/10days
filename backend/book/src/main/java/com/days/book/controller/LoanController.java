@@ -7,6 +7,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -235,6 +237,30 @@ public class LoanController {
     public ResponseEntity<LoanService.LoanStatistics> getLoanStatistics() {
         LoanService.LoanStatistics statistics = loanService.getLoanStatistics();
         return ResponseEntity.ok(statistics);
+    }
+
+    /**
+     * 내 대출 조회 (현재 사용자)
+     */
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<List<Loan>> getMyLoans(Authentication authentication) {
+        try {
+            User user = (User) authentication.getPrincipal();
+            Long userId = user.getId();
+            
+            // userId로 Member 찾기
+            Optional<Member> memberOptional = memberService.findMemberByUserId(userId);
+            if (memberOptional.isEmpty()) {
+                return ResponseEntity.ok(new ArrayList<>());
+            }
+            
+            Long memberId = memberOptional.get().getId();
+            List<Loan> loans = loanService.getLoanHistoryByMember(memberId);
+            return ResponseEntity.ok(loans);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     /**

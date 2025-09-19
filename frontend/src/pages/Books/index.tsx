@@ -11,9 +11,9 @@ import {
   Modal,
   Form,
   message,
-  Popconfirm,
   Row,
   Col,
+  App,
 } from 'antd';
 import {
   PlusOutlined,
@@ -53,6 +53,7 @@ const { Title } = Typography;
 const { Search } = Input;
 
 const BookList: React.FC = () => {
+  const { modal, message } = App.useApp();
   const authContext = useContext(AuthContext);
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(false);
@@ -123,15 +124,50 @@ const BookList: React.FC = () => {
     setIsModalVisible(true);
   };
 
-  const handleDelete = async (id: number) => {
-    try {
-      // 실제 API 호출
-      await bookService.delete(id);
-      setBooks(books.filter(book => book.id !== id));
-      message.success('도서가 삭제되었습니다.');
-    } catch (error) {
-      message.error(getErrorMessage(error));
-    }
+  const handleDeleteConfirm = (book: Book) => {
+    console.log('🔥 Books handleDeleteConfirm called with book:', book);
+    console.log('🔥 modal.confirm about to be called...');
+    
+    // 강제로 알림 표시 (테스트용)
+    message.info(`도서 "${book.title}" 삭제 버튼이 클릭되었습니다.`);
+    
+    modal.confirm({
+      title: '도서 삭제 확인',
+      content: (
+        <div>
+          <p>정말로 이 도서를 삭제하시겠습니까?</p>
+          <p><strong>도서명:</strong> {book.title}</p>
+          <p><strong>저자:</strong> {book.author}</p>
+          <p style={{ color: '#ff4d4f', fontSize: '12px' }}>
+            이 작업은 되돌릴 수 없습니다.
+          </p>
+        </div>
+      ),
+      icon: <DeleteOutlined style={{ color: '#ff4d4f' }} />,
+      okText: '삭제',
+      okType: 'danger',
+      cancelText: '취소',
+      centered: true,
+      maskClosable: false,
+      onOk: async () => {
+        console.log('Delete confirmed for book:', book.id);
+        try {
+          // 실제 API 호출
+          await bookService.delete(book.id);
+          setBooks(books.filter(b => b.id !== book.id));
+          message.success('도서가 삭제되었습니다.');
+        } catch (error) {
+          console.error('Delete error:', error);
+          message.error(getErrorMessage(error));
+          throw error; // 모달이 닫히지 않도록 에러를 다시 던짐
+        }
+      },
+      onCancel() {
+        console.log('삭제가 취소되었습니다.');
+      },
+    });
+    
+    console.log('🔥 modal.confirm called for book - should appear now!');
   };
 
   const handleModalOk = async () => {
@@ -242,21 +278,15 @@ const BookList: React.FC = () => {
             >
               수정
             </Button>
-            <Popconfirm
-              title="정말 삭제하시겠습니까?"
-              onConfirm={() => handleDelete(record.id)}
-              okText="삭제"
-              cancelText="취소"
+            <Button
+              type="link"
+              size="small"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDeleteConfirm(record)}
             >
-              <Button
-                type="link"
-                size="small"
-                danger
-                icon={<DeleteOutlined />}
-              >
-                삭제
-              </Button>
-            </Popconfirm>
+              삭제
+            </Button>
           </Space>
         ) : (
           <span style={{ color: '#666' }}>조회 전용</span>

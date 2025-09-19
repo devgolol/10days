@@ -124,8 +124,17 @@ const LoanList: React.FC = () => {
   const loadLoans = async () => {
     try {
       setLoading(true);
-      // 실제 API 호출
-      const response = await loanService.getAll();
+      let response;
+      
+      // 역할에 따라 다른 API 호출
+      if (role === 'ADMIN') {
+        // 관리자: 모든 대출 데이터 로딩
+        response = await loanService.getAll();
+      } else {
+        // 일반 사용자: 자신의 대출 데이터만 로딩
+        response = await loanService.getMyLoans();
+      }
+      
       setLoans(response.data);
       setLoading(false);
     } catch (error) {
@@ -157,8 +166,17 @@ const LoanList: React.FC = () => {
 
     try {
       setLoading(true);
-      // 실제 API 호출
-      const response = await loanService.search(value);
+      let response;
+      
+      // 역할에 따라 다른 검색 API 호출
+      if (role === 'ADMIN') {
+        // 관리자: 모든 대출 데이터 검색
+        response = await loanService.search(value);
+      } else {
+        // 일반 사용자: 자신의 대출 데이터만 검색
+        response = await loanService.searchMyLoans(value);
+      }
+      
       setLoans(response.data);
       setLoading(false);
     } catch (error) {
@@ -168,6 +186,11 @@ const LoanList: React.FC = () => {
   };
 
   const handleAdd = () => {
+    if (role !== 'ADMIN') {
+      message.warning('관리자만 대출을 등록할 수 있습니다.');
+      return;
+    }
+    
     setEditingLoan(null);
     setSelectedBook(null);
     setSelectedMember(null);
@@ -188,17 +211,6 @@ const LoanList: React.FC = () => {
       returnDate: dayjs(),
     });
     setIsReturnModalVisible(true);
-  };
-
-  const handleDelete = async (id: number) => {
-    try {
-      // 실제 API 호출
-      await loanService.delete(id);
-      setLoans(loans.filter(loan => loan.id !== id));
-      message.success('대출 기록이 삭제되었습니다.');
-    } catch (error) {
-      message.error(getErrorMessage(error));
-    }
   };
 
   const calculateOverdueFee = (dueDate: string, returnDate?: string) => {
@@ -487,7 +499,7 @@ const LoanList: React.FC = () => {
       width: 100,
       render: (_, record: Loan) => (
         <Space size="small">
-          {record.status === 'ACTIVE' && (
+          {record.status === 'ACTIVE' && role === 'ADMIN' && (
             <Button
               type="primary"
               size="small"
@@ -506,9 +518,11 @@ const LoanList: React.FC = () => {
     <div>
       <div className="page-header">
         <Title level={2}>대출 관리</Title>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-          대출 등록
-        </Button>
+        {role === 'ADMIN' && (
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+            대출 등록
+          </Button>
+        )}
       </div>
 
       <Card>

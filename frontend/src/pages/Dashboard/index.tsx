@@ -75,13 +75,15 @@ const Dashboard: React.FC = () => {
   const recentLoansColumns = [
     {
       title: '도서명',
-      dataIndex: 'bookTitle',
+      dataIndex: 'book',
       key: 'bookTitle',
+      render: (book: any) => book?.title || '삭제된 도서',
     },
     {
       title: '회원명',
-      dataIndex: 'memberName',
+      dataIndex: 'member',
       key: 'memberName',
+      render: (member: any) => member?.name || '삭제된 회원',
     },
     {
       title: '대출일',
@@ -104,6 +106,7 @@ const Dashboard: React.FC = () => {
           ACTIVE: { color: 'green', text: '대출중' },
           OVERDUE: { color: 'red', text: '연체' },
           RETURNED: { color: 'blue', text: '반납완료' },
+          LOST: { color: 'orange', text: '분실' },
         };
         const config = statusConfig[status as keyof typeof statusConfig] || { color: 'default', text: status };
         return <Tag color={config.color}>{config.text}</Tag>;

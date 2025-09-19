@@ -165,6 +165,17 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("해당 이메일로 등록된 사용자를 찾을 수 없습니다."));
 
+        // Member 테이블에서 삭제된 계정 확인 (admin 계정 제외)
+        if (!user.getUsername().equals("admin")) {
+            boolean memberExists = memberRepository.findByEmail(user.getEmail()).isPresent();
+            if (!memberExists) {
+                // Member가 삭제된 경우, User도 삭제하고 오류 반환
+                log.warn("Member 삭제된 계정으로 아이디 찾기 시도: {}, User 계정도 삭제 처리", user.getUsername());
+                userRepository.delete(user);
+                throw new RuntimeException("해당 이메일로 등록된 사용자를 찾을 수 없습니다.");
+            }
+        }
+
         // 인증코드 생성
         String code = emailService.generateVerificationCode();
         
@@ -221,6 +232,17 @@ public class AuthService {
         
         if (!user.getEmail().equals(email)) {
             throw new RuntimeException("사용자 정보가 일치하지 않습니다.");
+        }
+        
+        // Member 테이블에서 삭제된 계정 확인 (admin 계정 제외)
+        if (!username.equals("admin")) {
+            boolean memberExists = memberRepository.findByEmail(user.getEmail()).isPresent();
+            if (!memberExists) {
+                // Member가 삭제된 경우, User도 삭제하고 오류 반환
+                log.warn("Member 삭제된 계정으로 비밀번호 찾기 시도: {}, User 계정도 삭제 처리", username);
+                userRepository.delete(user);
+                throw new RuntimeException("존재하지 않는 사용자명입니다.");
+            }
         }
         
         // 인증코드 생성

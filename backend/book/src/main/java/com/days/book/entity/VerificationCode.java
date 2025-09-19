@@ -34,11 +34,13 @@ public class VerificationCode {
     private LocalDateTime expiresAt;
     
     @Column(nullable = false)
+    @Builder.Default
     private Boolean used = false;
     
     private String username; // 비밀번호 찾기 시 사용할 아이디
     
     @Column(nullable = false)
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
     
     public enum VerificationType {

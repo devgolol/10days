@@ -10,10 +10,10 @@ import {
   Modal,
   Form,
   message,
-  Popconfirm,
   Row,
   Col,
   Select,
+  App,
 } from 'antd';
 import {
   PlusOutlined,
@@ -51,6 +51,7 @@ const { Search } = Input;
 const { Option } = Select;
 
 const MemberList: React.FC = () => {
+  const { modal, message } = App.useApp();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
@@ -113,15 +114,60 @@ const MemberList: React.FC = () => {
     setIsModalVisible(true);
   };
 
-  const handleDelete = async (id: number) => {
-    try {
-      // 실제 API 호출
-      await memberService.delete(id);
-      setMembers(members.filter(member => member.id !== id));
-      message.success('회원이 삭제되었습니다.');
-    } catch (error) {
-      message.error(getErrorMessage(error));
-    }
+  const handleDeleteConfirm = (member: Member) => {
+    console.log('🔥 Members handleDeleteConfirm called with member:', member);
+    console.log('🔥 modal.confirm about to be called...');
+    
+    // 강제로 알림 표시 (테스트용)
+    message.info(`회원 "${member.name}" 삭제 버튼이 클릭되었습니다.`);
+    
+    modal.confirm({
+      title: '회원 삭제 확인',
+      content: (
+        <div>
+          <p>정말로 이 회원을 삭제하시겠습니까?</p>
+          <div style={{ 
+            padding: '12px', 
+            background: '#f5f5f5', 
+            borderRadius: '6px',
+            marginTop: '12px' 
+          }}>
+            <div><strong>이름:</strong> {member.name}</div>
+            <div><strong>이메일:</strong> {member.email}</div>
+            <div><strong>회원번호:</strong> {member.memberNumber}</div>
+            <div><strong>상태:</strong> {member.status}</div>
+          </div>
+          <p style={{ marginTop: '12px', color: '#ff4d4f' }}>
+            ⚠️ 이 작업은 되돌릴 수 없습니다.
+          </p>
+        </div>
+      ),
+      icon: <DeleteOutlined style={{ color: '#ff4d4f' }} />,
+      okText: '삭제',
+      okType: 'danger',
+      cancelText: '취소',
+      width: 500,
+      centered: true,
+      maskClosable: false,
+      onOk: async () => {
+        console.log('Delete confirmed for member:', member.id);
+        try {
+          // 실제 API 호출
+          await memberService.delete(member.id);
+          setMembers(members.filter(m => m.id !== member.id));
+          message.success('회원이 삭제되었습니다.');
+        } catch (error) {
+          console.error('Member delete error:', error);
+          message.error(getErrorMessage(error));
+          throw error; // 모달이 닫히지 않도록 에러를 다시 던짐
+        }
+      },
+      onCancel() {
+        console.log('회원 삭제가 취소되었습니다.');
+      },
+    });
+    
+    console.log('🔥 modal.confirm called for member - should appear now!');
   };
 
   const handleModalOk = async () => {
@@ -249,21 +295,15 @@ const MemberList: React.FC = () => {
           </Button>
           {/* admin 계정(관리자)은 삭제 불가, admin2는 삭제 가능 */}
           {record.name !== '관리자' && record.email !== 'admin@library.com' ? (
-            <Popconfirm
-              title="정말 삭제하시겠습니까?"
-              onConfirm={() => handleDelete(record.id)}
-              okText="삭제"
-              cancelText="취소"
+            <Button
+              type="link"
+              size="small"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDeleteConfirm(record)}
             >
-              <Button
-                type="link"
-                size="small"
-                danger
-                icon={<DeleteOutlined />}
-              >
-                삭제
-              </Button>
-            </Popconfirm>
+              삭제
+            </Button>
           ) : (
             <Button
               type="link"

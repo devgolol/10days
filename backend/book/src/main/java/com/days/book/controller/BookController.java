@@ -78,14 +78,22 @@ public class BookController {
     //도서 삭제 (관리자만)
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteBook(@PathVariable("id") Long id) {
+    public ResponseEntity<String> deleteBook(@PathVariable("id") Long id) {
         try {
             bookService.deleteBook(id);
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
+            // 도서가 존재하지 않는 경우
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("도서를 찾을 수 없습니다: " + e.getMessage());
         } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().build();
+            // 대출 중이거나 대출 기록이 있어 삭제 불가능한 경우
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(e.getMessage());
+        } catch (Exception e) {
+            // 기타 예상하지 못한 오류
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("도서 삭제 중 오류가 발생했습니다: " + e.getMessage());
         }
     }
 
