@@ -37,6 +37,7 @@ public class DataInitializer implements CommandLineRunner {
         if (!userRepository.existsByUsername("admin")) {
             User admin = User.builder()
                     .username("admin")
+                    .name("관리자")  // name 필드 추가
                     .email("admin@library.com")
                     .password(passwordEncoder.encode("admin123"))
                     .role(Role.ADMIN)
@@ -54,6 +55,7 @@ public class DataInitializer implements CommandLineRunner {
         if (!userRepository.existsByUsername("user")) {
             User user = User.builder()
                     .username("user")
+                    .name("테스트 사용자")  // name 필드 추가
                     .email("user@library.com")
                     .password(passwordEncoder.encode("user123"))
                     .role(Role.USER)
