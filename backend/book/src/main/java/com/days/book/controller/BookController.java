@@ -179,5 +179,13 @@ public class BookController {
         long count = bookService.countAllBooks();
         return ResponseEntity.ok(count);
     }
+    
+    // 임시 엔드포인트: 스키마 수정 (loans 테이블 book_id를 nullable로 변경)
+    @PostMapping("/fix-schema")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> fixSchema() {
+        String result = bookService.fixLoanTableSchema();
+        return ResponseEntity.ok(result);
+    }
 
 }
