@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.days.book.entity.Loan;
 import com.days.book.entity.Loan.LoanStatus;
 import com.days.book.entity.Member;
+import com.days.book.entity.User;
 import com.days.book.service.LoanService;
 import com.days.book.service.MemberService;
 import com.days.book.dto.LoanCreateRequest;
@@ -43,12 +44,12 @@ public class LoanController {
     private final MemberService memberService;
 
     /**
-     * 전체 대출 조회 (관리자 및 사용자)
+     * 전체 대출 조회 (관리자 및 사용자) - DTO 방식으로 안정적 처리
      */
     @GetMapping
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
-    public ResponseEntity<List<Loan>> getAllLoans() {
-        List<Loan> loans = loanService.getAllLoans();
+    public ResponseEntity<List<LoanResponseDTO>> getAllLoans() {
+        List<LoanResponseDTO> loans = loanService.getAllLoansAsDTO();
         return ResponseEntity.ok(loans);
     }
     
@@ -256,27 +257,20 @@ public class LoanController {
     }
 
     /**
-     * 내 대출 조회 (현재 사용자)
+     * 내 대출 조회 (현재 사용자) - DTO 방식으로 프록시 문제 해결
      */
     @GetMapping("/my")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<List<Loan>> getMyLoans(Authentication authentication) {
+    public ResponseEntity<List<LoanResponseDTO>> getMyLoans(Authentication authentication) {
         try {
-            // 인증된 사용자의 이메일 가져오기
-            String userEmail = authentication.getName();
+            User user = (User) authentication.getPrincipal();
+            Long userId = user.getId();
             
-            // 이메일로 Member 찾기
-            try {
-                Member member = memberService.getMemberByEmail(userEmail);
-                Long memberId = member.getId();
-                List<Loan> loans = loanService.getLoanHistoryByMember(memberId);
-                return ResponseEntity.ok(loans);
-            } catch (Exception e) {
-                // Member가 존재하지 않는 경우 빈 목록 반환
-                return ResponseEntity.ok(new ArrayList<>());
-            }
+            // DTO 방식으로 변경하여 프록시 문제 해결
+            List<LoanResponseDTO> loans = loanService.getRecentLoansByUserIdAsDTO(userId, Integer.MAX_VALUE);
+            return ResponseEntity.ok(loans);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.ok(new ArrayList<>());
         }
     }
 

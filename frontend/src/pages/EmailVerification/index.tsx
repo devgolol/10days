@@ -208,8 +208,14 @@ const EmailVerification: React.FC = () => {
             </div>
 
             <div className="back-section">
+              <Text type="secondary">인증에 문제가 있으신가요?</Text>
+              <br />
               <Button type="text" onClick={() => navigate('/register')}>
-                ← 회원가입으로 돌아가기
+                ← 다시 회원가입하기
+              </Button>
+              <Text type="secondary" style={{ marginLeft: '16px' }}>또는</Text>
+              <Button type="text" onClick={() => navigate('/login')}>
+                로그인 페이지로 →
               </Button>
             </div>
           </Space>

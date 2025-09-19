@@ -34,6 +34,7 @@ public class AuthService {
     private final EmailService emailService;
     private final AuthenticationManager authenticationManager;
     private final MemberRepository memberRepository;
+    private final MemberService memberService;
 
     /**
      * 회원가입
@@ -93,6 +94,40 @@ public class AuthService {
 
         userRepository.save(user);
 
+        // Member 테이블에도 동일한 정보로 회원 생성 (이미 존재하는 경우 무시)
+        try {
+            // 이미 Member가 존재하는지 확인
+            Optional<com.days.book.entity.Member> existingMember = memberRepository.findByEmail(email);
+            if (!existingMember.isPresent()) {
+                com.days.book.entity.Member member = com.days.book.entity.Member.builder()
+                        .memberNumber(user.getMemberNumber()) // User와 동일한 회원번호 사용
+                        .name(name)
+                        .email(email)
+                        .phone(phone)
+                        .address(address)
+                        .joinDate(java.time.LocalDate.now())
+                        .status(com.days.book.entity.Member.MemberStatus.ACTIVE)
+                        .maxLoanCount(5)
+                        .build();
+                
+                memberRepository.save(member); // MemberService 대신 직접 저장
+                log.info("Member 테이블에 회원 정보 생성 완료: email={}, memberNumber={}", email, user.getMemberNumber());
+            } else {
+                // 기존 Member 정보 업데이트
+                com.days.book.entity.Member existingMemberEntity = existingMember.get();
+                existingMemberEntity.setMemberNumber(user.getMemberNumber());
+                existingMemberEntity.setName(name);
+                existingMemberEntity.setPhone(phone);
+                existingMemberEntity.setAddress(address);
+                memberRepository.save(existingMemberEntity);
+                log.info("기존 Member 테이블 정보 업데이트 완료: email={}, memberNumber={}", email, user.getMemberNumber());
+            }
+        } catch (Exception e) {
+            log.error("Member 테이블 처리 실패: email={}, error={}", email, e.getMessage());
+            // User는 이미 저장되었으므로 Member 처리 실패 시에도 회원가입은 진행
+            // 향후 로그인 시 Member가 없으면 자동 생성하도록 처리할 수 있음
+        }
+
         // 이메일 인증 메일 발송
         emailService.sendEmailVerification(email, verificationToken, username);
 
@@ -117,14 +152,26 @@ public class AuthService {
             throw new RuntimeException("이메일 인증이 완료되지 않은 계정입니다. 이메일을 확인해주세요.");
         }
 
-        // Member 테이블에서 삭제된 계정 확인 (admin 계정 제외)
+        // Member 테이블에서 Member 존재 확인 및 자동 생성 (admin 계정 제외)
         if (!username.equals("admin")) {
-            boolean memberExists = memberRepository.findByEmail(user.getEmail()).isPresent();
-            if (!memberExists) {
-                // Member가 삭제된 경우, User도 삭제하고 오류 반환
-                log.warn("Member 삭제된 계정으로 로그인 시도: {}, User 계정도 삭제 처리", username);
-                userRepository.delete(user);
-                throw new RuntimeException("존재하지 않는 계정입니다.");
+            Optional<com.days.book.entity.Member> memberOpt = memberRepository.findByEmail(user.getEmail());
+            if (!memberOpt.isPresent()) {
+                // Member가 없으면 자동 생성
+                try {
+                    com.days.book.entity.Member member = com.days.book.entity.Member.builder()
+                            .memberNumber(user.getMemberNumber()) // User와 동일한 회원번호 사용
+                            .name(user.getName())
+                            .email(user.getEmail())
+                            .phone(user.getPhone())
+                            .address(user.getAddress())
+                            .build();
+                    
+                    memberService.createMember(member);
+                    log.info("로그인 시 Member 자동 생성 완료: email={}, memberNumber={}", user.getEmail(), user.getMemberNumber());
+                } catch (Exception e) {
+                    log.error("로그인 시 Member 자동 생성 실패: email={}, error={}", user.getEmail(), e.getMessage());
+                    throw new RuntimeException("회원 정보 생성에 실패했습니다. 관리자에게 문의하세요.");
+                }
             }
         }
 
@@ -165,14 +212,26 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("해당 이메일로 등록된 사용자를 찾을 수 없습니다."));
 
-        // Member 테이블에서 삭제된 계정 확인 (admin 계정 제외)
+        // Member 테이블에서 Member 존재 확인 및 자동 생성 (admin 계정 제외)
         if (!user.getUsername().equals("admin")) {
-            boolean memberExists = memberRepository.findByEmail(user.getEmail()).isPresent();
-            if (!memberExists) {
-                // Member가 삭제된 경우, User도 삭제하고 오류 반환
-                log.warn("Member 삭제된 계정으로 아이디 찾기 시도: {}, User 계정도 삭제 처리", user.getUsername());
-                userRepository.delete(user);
-                throw new RuntimeException("해당 이메일로 등록된 사용자를 찾을 수 없습니다.");
+            Optional<com.days.book.entity.Member> memberOpt = memberRepository.findByEmail(user.getEmail());
+            if (!memberOpt.isPresent()) {
+                // Member가 없으면 자동 생성
+                try {
+                    com.days.book.entity.Member member = com.days.book.entity.Member.builder()
+                            .memberNumber(user.getMemberNumber()) // User와 동일한 회원번호 사용
+                            .name(user.getName())
+                            .email(user.getEmail())
+                            .phone(user.getPhone())
+                            .address(user.getAddress())
+                            .build();
+                    
+                    memberService.createMember(member);
+                    log.info("아이디 찾기 시 Member 자동 생성 완료: email={}, memberNumber={}", user.getEmail(), user.getMemberNumber());
+                } catch (Exception e) {
+                    log.error("아이디 찾기 시 Member 자동 생성 실패: email={}, error={}", user.getEmail(), e.getMessage());
+                    // Member 생성 실패 시에도 아이디 찾기는 진행
+                }
             }
         }
 
@@ -234,14 +293,26 @@ public class AuthService {
             throw new RuntimeException("사용자 정보가 일치하지 않습니다.");
         }
         
-        // Member 테이블에서 삭제된 계정 확인 (admin 계정 제외)
+        // Member 테이블에서 Member 존재 확인 및 자동 생성 (admin 계정 제외)
         if (!username.equals("admin")) {
-            boolean memberExists = memberRepository.findByEmail(user.getEmail()).isPresent();
-            if (!memberExists) {
-                // Member가 삭제된 경우, User도 삭제하고 오류 반환
-                log.warn("Member 삭제된 계정으로 비밀번호 찾기 시도: {}, User 계정도 삭제 처리", username);
-                userRepository.delete(user);
-                throw new RuntimeException("존재하지 않는 사용자명입니다.");
+            Optional<com.days.book.entity.Member> memberOpt = memberRepository.findByEmail(user.getEmail());
+            if (!memberOpt.isPresent()) {
+                // Member가 없으면 자동 생성
+                try {
+                    com.days.book.entity.Member member = com.days.book.entity.Member.builder()
+                            .memberNumber(user.getMemberNumber()) // User와 동일한 회원번호 사용
+                            .name(user.getName())
+                            .email(user.getEmail())
+                            .phone(user.getPhone())
+                            .address(user.getAddress())
+                            .build();
+                    
+                    memberService.createMember(member);
+                    log.info("비밀번호 찾기 시 Member 자동 생성 완료: email={}, memberNumber={}", user.getEmail(), user.getMemberNumber());
+                } catch (Exception e) {
+                    log.error("비밀번호 찾기 시 Member 자동 생성 실패: email={}, error={}", user.getEmail(), e.getMessage());
+                    // Member 생성 실패 시에도 비밀번호 찾기는 진행
+                }
             }
         }
         

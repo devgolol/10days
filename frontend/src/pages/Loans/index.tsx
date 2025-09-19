@@ -131,7 +131,7 @@ const LoanList: React.FC = () => {
         // 관리자: 모든 대출 데이터 로딩
         response = await loanService.getAll();
       } else {
-        // 일반 사용자: 자신의 대출 데이터만 로딩
+        // 일반 사용자: 자신의 대출 데이터만 로딩 (DTO 방식으로 수정)
         response = await loanService.getMyLoans();
       }
       
@@ -193,8 +193,9 @@ const LoanList: React.FC = () => {
   };
 
   const handleAdd = () => {
-    if (role !== 'ADMIN') {
-      message.warning('관리자만 대출을 등록할 수 있습니다.');
+    // 모든 사용자가 대출등록 가능하도록 변경
+    if (role !== 'ADMIN' && role !== 'USER') {
+      message.warning('로그인이 필요합니다.');
       return;
     }
     
@@ -407,14 +408,14 @@ const LoanList: React.FC = () => {
     {
       title: '도서',
       key: 'book',
-      render: (_, record: Loan) => (
+      render: (_, record: any) => (
         <div>
           <div style={{ fontWeight: 'bold' }}>
             <BookOutlined style={{ marginRight: 4 }} />
-            {record.book?.title || '정보 없음'}
+            {record.bookTitle || record.book?.title || '정보 없음'}
           </div>
           <div style={{ fontSize: '12px', color: '#666' }}>
-            {record.book?.author || '알 수 없음'} | {record.book?.isbn || 'N/A'}
+            {record.bookAuthor || record.book?.author || '알 수 없음'} | {record.bookIsbn || record.book?.isbn || 'N/A'}
           </div>
         </div>
       ),
@@ -422,14 +423,14 @@ const LoanList: React.FC = () => {
     {
       title: '회원',
       key: 'member',
-      render: (_, record: Loan) => (
+      render: (_, record: any) => (
         <div>
           <div style={{ fontWeight: 'bold' }}>
             <UserOutlined style={{ marginRight: 4 }} />
-            {record.member?.name || record.memberName || '정보 없음'}
+            {record.memberName || record.member?.name || '정보 없음'}
           </div>
           <div style={{ fontSize: '12px', color: '#666' }}>
-            {record.member?.memberNumber || record.memberNumber || 'N/A'}
+            {record.memberNumber || record.member?.memberNumber || 'N/A'}
           </div>
         </div>
       ),
@@ -506,7 +507,7 @@ const LoanList: React.FC = () => {
       width: 100,
       render: (_, record: Loan) => (
         <Space size="small">
-          {record.status === 'ACTIVE' && role === 'ADMIN' && (
+          {record.status === 'ACTIVE' && (role === 'ADMIN' || role === 'USER') && (
             <Button
               type="primary"
               size="small"
@@ -525,7 +526,7 @@ const LoanList: React.FC = () => {
     <div>
       <div className="page-header">
         <Title level={2}>대출 관리</Title>
-        {role === 'ADMIN' && (
+        {(role === 'ADMIN' || role === 'USER') && (
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
             대출 등록
           </Button>

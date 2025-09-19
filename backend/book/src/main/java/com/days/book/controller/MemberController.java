@@ -121,11 +121,25 @@ public class MemberController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteMember(@PathVariable("id") Long id) {
+        System.out.println("🔥 DELETE 요청 받음 - Member ID: " + id);
         try {
+            System.out.println("🔥 memberService.deleteMember 호출 전");
             memberService.deleteMember(id);
+            System.out.println("🔥 memberService.deleteMember 호출 성공");
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
-            return ResponseEntity.notFound().build();
+            System.err.println("🔥 Member 삭제 오류: " + e.getMessage());
+            e.printStackTrace();
+            // 더 상세한 오류 정보를 반환
+            if (e.getMessage().contains("대출 기록이 있는")) {
+                return ResponseEntity.status(409).build(); // 409 Conflict
+            } else if (e.getMessage().contains("관리자 계정")) {
+                return ResponseEntity.status(403).build(); // 403 Forbidden
+            } else if (e.getMessage().contains("찾을 수 없습니다")) {
+                return ResponseEntity.notFound().build(); // 404 Not Found
+            } else {
+                return ResponseEntity.status(500).build(); // 500 Internal Server Error
+            }
         }
     }
 

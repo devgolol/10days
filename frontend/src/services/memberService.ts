@@ -59,6 +59,10 @@ export const memberService = {
   delete: (id: number) => 
     apiClient.delete<ApiResponse<void>>(`/members/${id}`),
 
+  // 회원 강제 삭제 (대출 기록과 함께 삭제)
+  forceDelete: (id: number) => 
+    apiClient.delete<ApiResponse<void>>(`/members/${id}/force`),
+
   // 회원 검색 (이름, 이메일로)
   search: (query: string) => 
     apiClient.get<ApiResponse<Member[]>>(`/members/search?q=${encodeURIComponent(query)}`),

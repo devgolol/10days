@@ -55,6 +55,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/loans/**").permitAll() // 대출 API 임시 허용
+                .requestMatchers("/api/members/**").permitAll() // 회원 API 임시 허용 (디버깅용)
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             );

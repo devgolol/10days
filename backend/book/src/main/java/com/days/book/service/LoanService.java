@@ -263,11 +263,9 @@ public class LoanService {
 
     @Transactional(readOnly = true)
     public List<Loan> getRecentLoans(int limit) {
-        // 더 안정적인 @EntityGraph 방식 사용
-        List<Loan> allLoans = loanRepository.findAllWithBookAndMemberGraph();
-        return allLoans.stream()
-            .limit(limit)
-            .collect(Collectors.toList());
+        // Pageable을 사용해 최신 대출 목록을 날짜 기준으로 정렬하여 조회
+        Pageable pageable = PageRequest.of(0, limit);
+        return loanRepository.findRecentLoansOrderByDate(pageable);
     }
 
     /**
@@ -363,10 +361,33 @@ public class LoanService {
             User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다: " + userId));
             Member member = memberService.getMemberByEmail(user.getEmail());
-            List<Loan> allLoans = loanRepository.findByMemberOrderByLoanDateDesc(member);
-            return allLoans.stream()
+            
+            // Member의 대출을 날짜 기준으로 정렬하여 조회 (이미 최신순 정렬됨)
+            List<Loan> memberLoans = loanRepository.findByMemberOrderByLoanDateDesc(member);
+            return memberLoans.stream()
                 .limit(limit)
-                .toList();
+                .collect(Collectors.toList());
+        } catch (Exception e) {
+            return List.of(); // 빈 리스트 반환
+        }
+    }
+
+    /**
+     * 사용자별 최근 대출 조회 - DTO 버전 (프록시 문제 해결)
+     */
+    @Transactional(readOnly = true)
+    public List<LoanResponseDTO> getRecentLoansByUserIdAsDTO(Long userId, int limit) {
+        try {
+            User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+            Member member = memberService.getMemberByEmail(user.getEmail());
+            
+            // DTO 버전으로 조회 - 전체 조회 후 필터링
+            List<LoanResponseDTO> allLoans = loanRepository.findAllLoansAsDTO();
+            return allLoans.stream()
+                .filter(loan -> loan.getMemberId().equals(member.getId()))
+                .limit(limit)
+                .collect(Collectors.toList());
         } catch (Exception e) {
             return List.of(); // 빈 리스트 반환
         }

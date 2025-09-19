@@ -40,7 +40,8 @@ public class DashboardController {
             stats.put("totalMembers", totalMembers);
             stats.put("activeLoans", activeLoans);
             stats.put("overdueLoans", overdueLoans);
-            stats.put("recentLoans", loanService.getRecentLoans(5));
+            // DTO 버전으로 변경하여 프록시 문제 해결
+            stats.put("recentLoans", loanService.getAllLoansAsDTO().stream().limit(5).toList());
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -64,7 +65,8 @@ public class DashboardController {
         try {
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("data", loanService.getRecentLoans(limit));
+            // DTO 방식으로 변경하여 프록시 문제 해결
+            response.put("data", loanService.getAllLoansAsDTO().stream().limit(limit).toList());
             
             return ResponseEntity.ok(response);
             
@@ -95,7 +97,8 @@ public class DashboardController {
             stats.put("myActiveLoans", myActiveLoans);
             stats.put("myOverdueLoans", myOverdueLoans);
             stats.put("myTotalLoans", myTotalLoans);
-            stats.put("recentLoans", loanService.getRecentLoansByUserId(userId, 5));
+            // DTO 방식으로 변경하여 프록시 문제 해결
+            stats.put("recentLoans", loanService.getRecentLoansByUserIdAsDTO(userId, 5));
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -123,7 +126,8 @@ public class DashboardController {
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("data", loanService.getRecentLoansByUserId(userId, limit));
+            // DTO 방식으로 변경하여 프록시 문제 해결
+            response.put("data", loanService.getRecentLoansByUserIdAsDTO(userId, limit));
             
             return ResponseEntity.ok(response);
             

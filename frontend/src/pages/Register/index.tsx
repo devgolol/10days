@@ -128,7 +128,12 @@ const Register: React.FC = () => {
         setUserEmail(values.email);
         message.success('회원가입이 완료되었습니다! 이메일을 확인해주세요.');
       } else {
-        message.error(data.error || '회원가입에 실패했습니다.');
+        // 이미 존재하는 계정이거나 이메일인 경우 더 자세한 안내 제공
+        if (data.error && (data.error.includes('이미 존재하는') || data.error.includes('이메일'))) {
+          message.error(data.error + '\n이메일 인증을 완료하지 않으셨다면 동일한 정보로 다시 가입하세요.');
+        } else {
+          message.error(data.error || '회원가입에 실패했습니다.');
+        }
       }
     } catch (error) {
       console.error('Register error:', error);

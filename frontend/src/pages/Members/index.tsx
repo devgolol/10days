@@ -156,10 +156,17 @@ const MemberList: React.FC = () => {
           await memberService.delete(member.id);
           setMembers(members.filter(m => m.id !== member.id));
           message.success('회원이 삭제되었습니다.');
-        } catch (error) {
+        } catch (error: any) {
           console.error('Member delete error:', error);
-          message.error(getErrorMessage(error));
-          throw error; // 모달이 닫히지 않도록 에러를 다시 던짐
+          
+          // 409 Conflict 에러 (대출 기록이 있는 경우)인지 확인
+          if (error.response?.status === 409) {
+            // 강제 삭제 옵션 제공
+            handleForceDeleteConfirm(member);
+          } else {
+            message.error(getErrorMessage(error));
+            throw error; // 모달이 닫히지 않도록 에러를 다시 던짐
+          }
         }
       },
       onCancel() {
@@ -168,6 +175,79 @@ const MemberList: React.FC = () => {
     });
     
     console.log('🔥 modal.confirm called for member - should appear now!');
+  };
+
+  const handleForceDeleteConfirm = (member: Member) => {
+    modal.confirm({
+      title: '강제 삭제 확인',
+      content: (
+        <div>
+          <div style={{ 
+            padding: '12px', 
+            background: '#fff2e8', 
+            borderRadius: '6px',
+            marginBottom: '16px',
+            border: '1px solid #ffbb96'
+          }}>
+            <p style={{ margin: 0, color: '#d46b08', fontWeight: 'bold' }}>
+              ⚠️ 이 회원은 대출 기록이 있습니다.
+            </p>
+          </div>
+          
+          <p>대출 기록과 함께 강제로 삭제하시겠습니까?</p>
+          
+          <div style={{ 
+            padding: '12px', 
+            background: '#f5f5f5', 
+            borderRadius: '6px',
+            marginTop: '12px' 
+          }}>
+            <div><strong>이름:</strong> {member.name}</div>
+            <div><strong>이메일:</strong> {member.email}</div>
+            <div><strong>회원번호:</strong> {member.memberNumber}</div>
+            <div><strong>상태:</strong> {member.status}</div>
+          </div>
+          
+          <div style={{ 
+            padding: '12px', 
+            background: '#fff1f0', 
+            borderRadius: '6px',
+            marginTop: '12px',
+            border: '1px solid #ffccc7'
+          }}>
+            <p style={{ margin: 0, color: '#cf1322', fontWeight: 'bold' }}>
+              🚨 주의: 대출 기록도 함께 영구 삭제됩니다.
+            </p>
+            <p style={{ margin: '8px 0 0 0', color: '#cf1322' }}>
+              이 작업은 되돌릴 수 없습니다.
+            </p>
+          </div>
+        </div>
+      ),
+      icon: <DeleteOutlined style={{ color: '#ff4d4f' }} />,
+      okText: '강제 삭제',
+      okType: 'danger',
+      cancelText: '취소',
+      width: 600,
+      centered: true,
+      maskClosable: false,
+      onOk: async () => {
+        console.log('Force delete confirmed for member:', member.id);
+        try {
+          // 강제 삭제 API 호출
+          await memberService.forceDelete(member.id);
+          setMembers(members.filter(m => m.id !== member.id));
+          message.success('회원이 강제 삭제되었습니다. (대출 기록 포함)');
+        } catch (error) {
+          console.error('Member force delete error:', error);
+          message.error('강제 삭제에 실패했습니다: ' + getErrorMessage(error));
+          throw error; // 모달이 닫히지 않도록 에러를 다시 던짐
+        }
+      },
+      onCancel() {
+        console.log('회원 강제 삭제가 취소되었습니다.');
+      },
+    });
   };
 
   const handleModalOk = async () => {

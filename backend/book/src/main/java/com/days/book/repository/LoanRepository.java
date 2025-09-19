@@ -97,8 +97,13 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
     
     // 모든 대출 조회 (@EntityGraph 사용 - 더 안정적)
     @EntityGraph(attributePaths = {"book", "member"})
-    @Query("SELECT l FROM Loan l ORDER BY l.id DESC")
+    @Query("SELECT l FROM Loan l ORDER BY l.loanDate DESC, l.createdAt DESC")
     List<Loan> findAllWithBookAndMemberGraph();
+    
+    // 최신 대출 목록 조회 (날짜 기준 정렬, Pageable 지원)
+    @EntityGraph(attributePaths = {"book", "member"})
+    @Query("SELECT l FROM Loan l ORDER BY l.loanDate DESC, l.createdAt DESC")
+    List<Loan> findRecentLoansOrderByDate(Pageable pageable);
     
     // 백업 방법: 단순 쿼리 (N+1 문제 있지만 확실함)
     @Query("SELECT l FROM Loan l ORDER BY l.id DESC")
@@ -110,15 +115,15 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
     @Query("UPDATE Loan l SET l.book = null WHERE l.book.id = :bookId")
     void updateBookToNullByBookId(@Param("bookId") Long bookId);
     
-    // DTO 방식으로 모든 대출 조회 (프록시 문제 해결) - NULL 처리 개선
+    // DTO 방식으로 모든 대출 조회 (프록시 문제 해결) - NULL 처리 개선 및 삭제된 엔티티 포함, 최신순 정렬
     @Query("SELECT new com.days.book.dto.LoanResponseDTO(" +
            "l.id, l.loanDate, l.dueDate, l.returnDate, l.status, l.overdueFee, l.notes, l.createdAt, l.updatedAt, " +
-           "COALESCE(b.id, 0L), COALESCE(b.title, '삭제된 도서'), COALESCE(b.author, 'N/A'), COALESCE(b.isbn, 'N/A'), COALESCE(b.category, 'N/A'), " +
-           "COALESCE(m.id, 0L), COALESCE(m.name, '삭제된 회원'), COALESCE(m.email, 'N/A'), COALESCE(m.memberNumber, 'N/A'), " +
+           "COALESCE(b.id, 0L), COALESCE(b.title, '삭제된 도서'), COALESCE(b.author, '정보없음'), COALESCE(b.isbn, '정보없음'), COALESCE(b.category, '정보없음'), " +
+           "COALESCE(m.id, 0L), COALESCE(m.name, '삭제된 회원'), COALESCE(m.email, '정보없음'), COALESCE(m.memberNumber, '정보없음'), " +
            "0L, false) " +
            "FROM Loan l " +
            "LEFT JOIN l.book b " +
            "LEFT JOIN l.member m " +
-           "ORDER BY l.id DESC")
+           "ORDER BY l.loanDate DESC, l.id DESC")
     List<LoanResponseDTO> findAllLoansAsDTO();
 }

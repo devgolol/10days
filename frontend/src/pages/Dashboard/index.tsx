@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { Card, Row, Col, Statistic, Table, Tag, Typography, Space, Alert } from 'antd';
+import { Card, Row, Col, Statistic, Table, Tag, Typography, Space, Alert, Button } from 'antd';
 import {
   BookOutlined,
   UserOutlined,
   FileTextOutlined,
   ExclamationCircleOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons';
 import { dashboardService } from '../../services';
 import { formatDate, formatCurrency, getErrorMessage } from '../../utils';
@@ -35,6 +36,11 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     loadDashboardData();
+    
+    // 자동 새로고침 (5분마다)
+    const interval = setInterval(loadDashboardData, 5 * 60 * 1000);
+    
+    return () => clearInterval(interval);
   }, [authContext]);
 
   const loadDashboardData = async () => {
@@ -96,13 +102,13 @@ const Dashboard: React.FC = () => {
       title: '도서명',
       dataIndex: 'book',
       key: 'bookTitle',
-      render: (book: any) => book?.title || '삭제된 도서',
+      render: (book: any, record: any) => record.bookTitle || book?.title || '삭제된 도서',
     },
     {
       title: '회원명',
       dataIndex: 'member',
       key: 'memberName',
-      render: (member: any) => member?.name || '삭제된 회원',
+      render: (member: any, record: any) => record.memberName || member?.name || '삭제된 회원',
     },
     {
       title: '대출일',
@@ -151,7 +157,17 @@ const Dashboard: React.FC = () => {
 
   return (
     <div>
-      <Title level={2}>대시보드</Title>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <Title level={2} style={{ margin: 0 }}>대시보드</Title>
+        <Button
+          icon={<ReloadOutlined />}
+          onClick={loadDashboardData}
+          loading={loading}
+          size="large"
+        >
+          새로고침
+        </Button>
+      </div>
       
       {/* 통계 카드 */}
       <Row gutter={16} style={{ marginBottom: 24 }}>
@@ -264,14 +280,28 @@ const Dashboard: React.FC = () => {
       )}
 
       {/* 최근 대출 목록 */}
-      <Card title="나의 최근 대출 목록" style={{ marginBottom: 24 }}>
+      <Card 
+        title="나의 최근 대출 목록" 
+        style={{ marginBottom: 24 }}
+        extra={
+          <Space>
+            <span style={{ fontSize: '12px', color: '#666' }}>
+              5분마다 자동 업데이트
+            </span>
+            <Button size="small" icon={<ReloadOutlined />} onClick={loadDashboardData} loading={loading}>
+              새로고침
+            </Button>
+          </Space>
+        }
+      >
         <Table
           columns={recentLoansColumns}
           dataSource={data.recentLoans}
           rowKey="id"
           loading={loading}
-          pagination={{ pageSize: 5 }}
+          pagination={{ pageSize: 5, showSizeChanger: false }}
           size="small"
+          showSorterTooltip={false}
         />
       </Card>
     </div>
