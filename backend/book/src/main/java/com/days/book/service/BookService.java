@@ -11,7 +11,9 @@ import com.days.book.entity.Book;
 import com.days.book.repository.BookRepository;
 import com.days.book.repository.LoanRepository;
 
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.PersistenceContext;
 
 @Service
 @Transactional
@@ -22,6 +24,9 @@ public class BookService {
     
     @Autowired
     private LoanRepository loanRepository;
+    
+    @PersistenceContext
+    private EntityManager entityManager;
 
     //도서등록
     public Book saveBook(Book book) {
@@ -149,7 +154,7 @@ public class BookService {
         return bookRepository.save(book);
     }
 
-    //도서 삭제
+    //도서 삭제 (폐기처분/분실 등의 경우, 대출기록은 보존)
     public void deleteBook(Long id) {
         Book book = bookRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 도서입니다: " +id));
@@ -161,13 +166,13 @@ public class BookService {
         }
 
         try {
-            // 관련된 과거 대출 기록의 book_id를 NULL로 설정 (연관 관계 해제)
+            // 1단계: 관련된 과거 대출 기록의 book 참조를 해제 (기록은 보존)
             loanRepository.updateBookToNullByBookId(id);
             
-            // 이제 안전하게 도서 삭제
+            // 2단계: 이제 안전하게 도서 삭제 (폐기처분/분실 처리)
             bookRepository.deleteById(id);
         } catch (Exception e) {
-            throw new IllegalStateException("도서를 삭제할 수 없습니다. 시스템 오류가 발생했습니다: " + e.getMessage());
+            throw new IllegalStateException("도서 삭제 중 오류가 발생했습니다: " + e.getMessage());
         }
     }
 
@@ -187,5 +192,17 @@ public class BookService {
     // DashboardController용 메서드
     public long getTotalBooksCount() {
         return bookRepository.count();
+    }
+    
+    // 임시 메서드: 데이터베이스 스키마 수정 (book_id 컬럼을 nullable로 변경)
+    @Transactional
+    public String fixLoanTableSchema() {
+        try {
+            // loans 테이블의 book_id 컬럼을 nullable로 변경
+            entityManager.createNativeQuery("ALTER TABLE loans MODIFY COLUMN book_id BIGINT NULL").executeUpdate();
+            return "스키마 수정 완료: loans.book_id 컬럼이 nullable로 변경되었습니다.";
+        } catch (Exception e) {
+            return "스키마 수정 실패: " + e.getMessage();
+        }
     }
 }

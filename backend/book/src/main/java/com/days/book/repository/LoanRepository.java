@@ -93,7 +93,7 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
     @Query("SELECT l FROM Loan l LEFT JOIN FETCH l.book LEFT JOIN FETCH l.member ORDER BY l.id DESC")
     List<Loan> findAllWithBookAndMember();
     
-    // 책 삭제 시 관련 대출 기록의 book_id를 NULL로 설정
+    // 책 삭제 시 관련 대출 기록의 book_id를 NULL로 설정 (기록 보존하되 참조 해제)
     @Modifying
     @Transactional
     @Query("UPDATE Loan l SET l.book = null WHERE l.book.id = :bookId")
