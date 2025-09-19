@@ -78,7 +78,7 @@ public class Loan {
 
     @UpdateTimestamp
     @Column(name = "updated_at")
-    private LocalDateTime UpdatedAt;
+    private LocalDateTime updatedAt;
 
     public enum LoanStatus {
         ACTIVE("대출중"),

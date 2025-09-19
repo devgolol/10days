@@ -419,10 +419,10 @@ const LoanList: React.FC = () => {
         <div>
           <div style={{ fontWeight: 'bold' }}>
             <UserOutlined style={{ marginRight: 4 }} />
-            {record.member?.name || '정보 없음'}
+            {record.member?.name || record.memberName || '정보 없음'}
           </div>
           <div style={{ fontSize: '12px', color: '#666' }}>
-            {record.member?.memberNumber || 'N/A'}
+            {record.member?.memberNumber || record.memberNumber || 'N/A'}
           </div>
         </div>
       ),
