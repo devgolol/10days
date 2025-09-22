@@ -77,6 +77,8 @@ public class SecurityConfig {
         configuration.addAllowedOrigin("http://localhost:5175");
         configuration.addAllowedOrigin("http://localhost:5179");
         configuration.addAllowedOrigin("http://localhost:5180"); // 현재 프론트엔드 포트 추가
+        configuration.addAllowedOrigin("http://52.65.209.186"); // AWS 퍼블릭 IP 추가
+        configuration.addAllowedOrigin("http://52.65.209.186:80"); // AWS 퍼블릭 IP 포트 80 추가
         configuration.addAllowedMethod("*");
         configuration.addAllowedHeader("*");
         configuration.setAllowCredentials(true);
