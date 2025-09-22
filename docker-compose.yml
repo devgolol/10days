@@ -7,7 +7,7 @@ services:
       MYSQL_USER: golol
       MYSQL_PASSWORD: 1234
     ports:
-      - "3307:3306"  # 3306 → 3307로 변경!
+      - "3306:3306"  # 호스트 포트도 3306으로 변경
     volumes:
       - mysql_data:/var/lib/mysql
 
