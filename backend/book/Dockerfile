@@ -10,6 +10,7 @@ RUN ./gradlew build -x test
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-COPY --from=build /app/build/libs/*.jar app.jar
+COPY --from=build /app/build/libs/ ./
+RUN mv *-SNAPSHOT.jar app.jar 2>/dev/null || mv *.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
