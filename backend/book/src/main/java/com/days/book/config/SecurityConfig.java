@@ -69,6 +69,9 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+        configuration.addAllowedOrigin("http://localhost"); // 포트 없는 localhost 추가
+        configuration.addAllowedOrigin("http://localhost:80"); // 명시적 포트 80 추가
+        configuration.addAllowedOrigin("http://localhost:3000"); // React 기본 포트 추가
         configuration.addAllowedOrigin("http://localhost:5173");
         configuration.addAllowedOrigin("http://localhost:5174");
         configuration.addAllowedOrigin("http://localhost:5175");

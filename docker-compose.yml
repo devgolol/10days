@@ -1,10 +1,27 @@
-version: '3.8'
-
 services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_DATABASE: tendays_library
+      MYSQL_USER: golol
+      MYSQL_PASSWORD: 1234
+    ports:
+      - "3307:3306"  # 3306 → 3307로 변경!
+    volumes:
+      - mysql_data:/var/lib/mysql
+
   backend:
     build: ./backend/book
     ports:
       - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/tendays_library?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
+      SPRING_DATASOURCE_USERNAME: golol
+      SPRING_DATASOURCE_PASSWORD: 1234
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    depends_on:
+      - mysql
 
   frontend:
     build: ./frontend
@@ -12,3 +29,7 @@ services:
       - "80:80"
     depends_on:
       - backend
+
+volumes:
+  mysql_data:
+  
