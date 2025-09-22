@@ -53,7 +53,7 @@ const Settings: React.FC<SettingsProps> = ({ isDarkMode, toggleDarkMode }) => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/auth/withdraw', {
+      const response = await fetch('http://52.65.209.186:8080/api/auth/withdraw', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

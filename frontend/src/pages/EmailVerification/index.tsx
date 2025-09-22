@@ -52,7 +52,7 @@ const EmailVerification: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8080/api/auth/verify-email', {
+      const response = await fetch('http://52.65.209.186:8080/api/auth/verify-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -99,7 +99,7 @@ const EmailVerification: React.FC = () => {
     setResendLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8080/api/auth/resend-verification', {
+      const response = await fetch('http://52.65.209.186:8080/api/auth/resend-verification', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

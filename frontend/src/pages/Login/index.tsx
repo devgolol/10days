@@ -55,7 +55,7 @@ const Login: React.FC = () => {
     setErrorMessage(''); // 이전 오류 메시지 초기화
     
     try {
-      const response = await fetch('http://localhost:8080/api/auth/login', {
+      const response = await fetch('http://52.65.209.186:8080/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -87,7 +87,7 @@ const Login: React.FC = () => {
     setFindEmailLoading(true);
     
     try {
-      const response = await fetch('http://localhost:8080/api/auth/find-email', {
+      const response = await fetch('http://52.65.209.186:8080/api/auth/find-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -117,7 +117,7 @@ const Login: React.FC = () => {
     setResetPasswordLoading(true);
     
     try {
-      const response = await fetch('http://localhost:8080/api/auth/reset-password', {
+      const response = await fetch('http://52.65.209.186:8080/api/auth/reset-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

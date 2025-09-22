@@ -113,7 +113,7 @@ const Register: React.FC = () => {
     try {
       const { confirmPassword, ...registerData } = values;
       
-      const response = await fetch('http://localhost:8080/api/auth/register', {
+      const response = await fetch('http://52.65.209.186:8080/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
