@@ -1,4 +1,4 @@
-FROM openjdk:21-jdk-slim AS build
+FROM eclipse-temurin:21-jdk AS build
 WORKDIR /app
 COPY gradlew .
 COPY gradle gradle
@@ -8,7 +8,7 @@ RUN chmod +x ./gradlew
 COPY src src
 RUN ./gradlew build -x test
 
-FROM openjdk:21-jre-slim
+FROM eclipse-temurin:21-jre
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
 EXPOSE 8080
